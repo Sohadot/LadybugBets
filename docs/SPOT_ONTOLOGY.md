@@ -45,14 +45,15 @@ prediction, a profitable opportunity, or advice to wager.
 - **Purpose:** Represent a governed change between comparable price observations
   over time.
 - **Required inputs:** two or more comparable Price Spots with distinct
-  timestamps. Comparability requires the same event, market, and outcome **and**
-  the same **canonical** bookmaker/operator identity — i.e. the observations must
-  resolve to the same LadybugBets canonical operator (see
-  [DATA_MODEL.md](DATA_MODEL.md)). Raw provider-supplied operator labels alone do
-  not establish operator sameness. Until identity resolution is governed
+  timestamps. Comparability requires the same **canonical** event, market, and
+  outcome **and** the same **canonical** bookmaker/operator identity — i.e. the
+  observations must resolve to the same LadybugBets canonical event, market,
+  outcome, and operator (see [DATA_MODEL.md](DATA_MODEL.md)). Raw
+  provider-supplied identifiers or labels alone do not establish
+  event/market/outcome/operator sameness. Until identity resolution is governed
   (Sprint 1), sameness holds only where the observations already share the same
-  canonical operator identity. Unless a later governed methodology intentionally
-  defines cross-operator movement, movement is defined within a single canonical
+  canonical identities. Unless a later governed methodology intentionally defines
+  cross-operator movement, movement is defined within a single canonical
   operator's quoted prices.
 - **Derived outputs:** movement amount and/or direction between the observations
   (a derived calculation).
@@ -105,10 +106,12 @@ prediction, a profitable opportunity, or advice to wager.
   distinction below). Every contributing observation still preserves its raw
   provider/operator provenance (its `source_*` identity), even though the
   consensus population is counted by canonical operator identity.
-- **Required inputs:** two or more comparable observations for the same event,
-  market, and outcome, attributed to **distinct canonical operator identities**,
-  each retaining full provenance (provider plus raw source-asserted operator
-  identity/label as well as the canonical operator identity).
+- **Required inputs:** two or more comparable observations for the same
+  **canonical** event, market, and outcome, attributed to **distinct canonical
+  operator identities**, each retaining full provenance (provider plus raw
+  source-asserted event/operator identities and labels as well as the canonical
+  identities). Raw provider identifiers or labels alone do not establish
+  event/market/outcome sameness.
 - **Derived outputs:** a cross-operator representation (e.g. range, spread across
   operators, or an explicitly defined aggregate) — always labeled as derived.
 - **What it means:** "Across these named operators, the observed prices for this

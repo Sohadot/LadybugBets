@@ -96,7 +96,9 @@ require that every observation populate it.
 
 | Field | Dimension | Meaning |
 | --- | --- | --- |
-| `event_id` | Canonical/normalized | LadybugBets canonical identifier for the sporting event (an alignment key, not a verbatim source value). |
+| `source_event_id` | Source-asserted | Event identifier supplied by the upstream provider, when available. |
+| `source_event_name` | Source-asserted | Provider-supplied event label/name, when available. |
+| `event_id` | Canonical/normalized | LadybugBets canonical event identity used for cross-provider alignment (an alignment key, not a verbatim source value). |
 | `source_sport_label` | Source-asserted | Sport label exactly as provided by the source, when available. |
 | `sport` | Canonical/normalized | LadybugBets canonical sport (e.g. football/soccer). |
 | `source_competition_label` | Source-asserted | Competition/league label exactly as provided by the source, when available. |
@@ -124,9 +126,20 @@ Note: the `source_*` label and identifier fields are source-asserted **evidence*
 of how a provider identifies an entity; their canonical counterparts
 (`event_id`, `sport`, `competition`, `operator_id`, `operator_display_name`,
 `market`, `outcome`, `jurisdiction`) are LadybugBets alignment constructs
-produced under the identity-normalization law above. Until identity resolution is
-governed (Sprint 1), a canonical counterpart may be unresolved; a raw label must
-not be promoted to canonical by assumption.
+produced under the identity-normalization law above. The raw/canonical pairs
+therefore include `source_event_id` → `event_id`, `source_operator_id` →
+`operator_id`, `source_sport_label` → `sport`, `source_competition_label` →
+`competition`, `source_market_label` → `market`, `source_outcome_label` →
+`outcome`, `source_start_time` → `start_time`, and `source_jurisdiction` →
+`jurisdiction`. Until identity resolution is governed (Sprint 1), a canonical
+counterpart may be unresolved; a raw label must not be promoted to canonical by
+assumption.
+
+A provider-native event identifier (`source_event_id`) must **never** be
+silently used as the LadybugBets canonical `event_id`. Different providers may
+assign different identifiers to the same sporting event; resolving them to one
+canonical event identity is a governed identity-resolution operation **deferred
+to Sprint 1**. No event-resolution algorithm is defined here.
 
 Time semantics for `source_observed_at` and `ingested_at` are defined in
 [Time semantics](#time-semantics) below.
