@@ -1,9 +1,15 @@
-"""Deterministic validation of the LadybugBets observation contract fixtures.
+"""Validation of the LadybugBets observation-contract fixtures and vocabularies.
 
-Standard library only. This is CONTRACT VALIDATION, not an ingestion engine.
-It verifies that the synthetic fixtures under fixtures/observation-contract/
-and the machine-readable contracts under contracts/ uphold the Sprint 1 laws
-(LBOC-001, LBIR-001, and the governance documents).
+Standard library only. This module:
+
+- confirms every JSON file parses;
+- runs the reusable deterministic validator
+  (governance.validate_observation) over every synthetic fixture and asserts
+  each fixture is internally consistent with its own declared admission state;
+- checks identity-mapping and source-profile fixtures;
+- asserts the JSON Schema contracts and the validator share the same controlled
+  vocabularies (no silent drift);
+- performs repository hygiene checks (no secrets, no vendor-specific names).
 
 Run:
     python -m unittest discover -s tests -p "test_*.py"
@@ -11,47 +17,22 @@ Run:
 
 import json
 import os
+import sys
 import unittest
 
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if REPO_ROOT not in sys.path:
+    sys.path.insert(0, REPO_ROOT)
+
+from governance import validate_observation as gov  # noqa: E402
+
 FIXTURES_ROOT = os.path.join(REPO_ROOT, "fixtures", "observation-contract")
 CONTRACTS_ROOT = os.path.join(REPO_ROOT, "contracts")
 
 OBSERVATION_DIRS = ("admitted", "quarantined", "rejected")
 
-ADMISSION_STATES = {"ADMITTED", "QUARANTINED", "REJECTED"}
-
-REASON_CODES = {
-    "UNRESOLVED_EVENT_IDENTITY",
-    "AMBIGUOUS_EVENT_IDENTITY",
-    "UNRESOLVED_OPERATOR_IDENTITY",
-    "AMBIGUOUS_OPERATOR_IDENTITY",
-    "UNRESOLVED_MARKET_IDENTITY",
-    "UNRESOLVED_OUTCOME_IDENTITY",
-    "UNRESOLVED_PARTICIPANT_IDENTITY",
-    "MISSING_REQUIRED_SOURCE_FIELD",
-    "INVALID_PRICE",
-    "INVALID_PRICE_FORMAT",
-    "MISSING_PROVIDER_PROVENANCE",
-    "TEMPORAL_AMBIGUITY",
-    "CONFLICTING_SOURCE_ASSERTIONS",
-    "INVALID_CONTRACT_VERSION",
-}
-
-# Reason code -> canonical field(s) that MUST remain unresolved (None) when the
-# code is present. Enforces "unresolved canonical identity is not represented as
-# resolved."
-UNRESOLVED_CANONICAL = {
-    "UNRESOLVED_EVENT_IDENTITY": "event_id",
-    "AMBIGUOUS_EVENT_IDENTITY": "event_id",
-    "UNRESOLVED_OPERATOR_IDENTITY": "operator_id",
-    "AMBIGUOUS_OPERATOR_IDENTITY": "operator_id",
-    "UNRESOLVED_MARKET_IDENTITY": "market_id",
-    "UNRESOLVED_OUTCOME_IDENTITY": "outcome_id",
-}
-
-VALID_PRICE_FORMATS = {"decimal", "american", "fractional"}
-
+# Vocabularies for the mapping and source-profile contracts (the observation
+# vocabularies live in the validator module as the single source of truth).
 RIGHTS_POSTURES = {"ALLOWED", "PROHIBITED", "UNKNOWN"}
 RIGHTS_CAPABILITIES = {
     "ingest_use",
@@ -62,7 +43,6 @@ RIGHTS_CAPABILITIES = {
     "redistribute_raw",
     "redistribute_derived",
 }
-
 MAPPING_DECISION_BASES = {
     "governed_registry_entry",
     "curated_alias",
@@ -70,48 +50,8 @@ MAPPING_DECISION_BASES = {
     "provider_declared_identifier",
 }
 MAPPING_STATUSES = {"active", "proposed", "deprecated", "rejected"}
+MAPPING_ENTITY_TYPES = set(gov.IDENTITY_ENTITIES)
 
-# Derived analytical concepts must never live inside a source observation.
-FORBIDDEN_DERIVED_KEYS = {
-    "implied_probability",
-    "normalized_probability",
-    "movement_amount",
-    "movement",
-    "cross_operator_difference",
-    "consensus",
-    "consensus_aggregate",
-    "overround",
-    "book_percentage",
-    "implied_margin",
-    "closing_comparison",
-    "closing",
-    "edge_score",
-}
-
-SECRET_KEY_SUBSTRINGS = (
-    "api_key",
-    "apikey",
-    "api-key",
-    "password",
-    "passwd",
-    "secret",
-    "bearer",
-    "credential",
-    "private_key",
-    "access_token",
-    "client_secret",
-)
-SECRET_VALUE_MARKERS = (
-    "-----begin",
-    "akia",
-    "bearer ",
-    "password=",
-    "api_key=",
-    "aws_secret",
-)
-
-# Real odds vendors / bookmakers / data suppliers that must not appear as
-# vendor-specific names. Fixtures and contracts must be vendor-neutral/synthetic.
 VENDOR_DENYLIST = (
     "bet365",
     "william hill",
@@ -145,6 +85,28 @@ VENDOR_DENYLIST = (
     "flashscore",
 )
 
+SECRET_KEY_SUBSTRINGS = (
+    "api_key",
+    "apikey",
+    "api-key",
+    "password",
+    "passwd",
+    "secret",
+    "bearer",
+    "credential",
+    "private_key",
+    "access_token",
+    "client_secret",
+)
+SECRET_VALUE_MARKERS = (
+    "-----begin",
+    "akia",
+    "bearer ",
+    "password=",
+    "api_key=",
+    "aws_secret",
+)
+
 
 def _load_json(path):
     with open(path, "r", encoding="utf-8") as handle:
@@ -166,7 +128,6 @@ def _iter_observation_files():
 
 
 def _walk(obj):
-    """Yield ('key', name) and ('value', scalar) pairs recursively."""
     if isinstance(obj, dict):
         for key, value in obj.items():
             yield ("key", key)
@@ -178,7 +139,7 @@ def _walk(obj):
         yield ("value", obj)
 
 
-class ObservationEnvelopeTests(unittest.TestCase):
+class ParsingTests(unittest.TestCase):
     def test_all_json_parses(self):
         for root in (FIXTURES_ROOT, CONTRACTS_ROOT):
             for path in _iter_json_files(root):
@@ -187,25 +148,14 @@ class ObservationEnvelopeTests(unittest.TestCase):
                 except json.JSONDecodeError as exc:  # pragma: no cover
                     self.fail("JSON did not parse: %s (%s)" % (path, exc))
 
+
+class FixtureConsistencyTests(unittest.TestCase):
     def test_observation_fixtures_exist(self):
         counts = {sub: 0 for sub in OBSERVATION_DIRS}
         for sub, _path, _data in _iter_observation_files():
             counts[sub] += 1
         for sub in OBSERVATION_DIRS:
             self.assertGreater(counts[sub], 0, "no fixtures under %s/" % sub)
-
-    def test_required_sections_present(self):
-        required = ("contract", "provenance", "source_asserted", "canonical", "governance")
-        for _sub, path, data in _iter_observation_files():
-            for section in required:
-                self.assertIn(section, data, "%s missing section %s" % (path, section))
-            self.assertIn("contract_version", data["contract"], path)
-            self.assertIn("observation_id", data["contract"], path)
-
-    def test_admission_states_controlled(self):
-        for _sub, path, data in _iter_observation_files():
-            state = data["governance"].get("admission_state")
-            self.assertIn(state, ADMISSION_STATES, "%s bad admission_state %r" % (path, state))
 
     def test_directory_matches_admission_state(self):
         expected = {"admitted": "ADMITTED", "quarantined": "QUARANTINED", "rejected": "REJECTED"}
@@ -216,144 +166,47 @@ class ObservationEnvelopeTests(unittest.TestCase):
                 "%s admission_state does not match its directory" % path,
             )
 
-    def test_reason_codes_controlled_and_present_when_required(self):
+    def test_every_fixture_is_internally_consistent(self):
+        """Each fixture must satisfy the invariants for its own declared state."""
         for _sub, path, data in _iter_observation_files():
-            gov = data["governance"]
-            state = gov["admission_state"]
-            codes = gov.get("reason_codes", [])
-            for code in codes:
-                self.assertIn(code, REASON_CODES, "%s unknown reason code %r" % (path, code))
-            if state in ("QUARANTINED", "REJECTED"):
-                self.assertTrue(codes, "%s (%s) must carry >=1 reason code" % (path, state))
-            if state == "ADMITTED":
-                self.assertEqual(codes, [], "%s ADMITTED must have empty reason_codes" % path)
-
-    def test_raw_and_canonical_operator_are_distinct_fields(self):
-        for _sub, path, data in _iter_observation_files():
-            src = data["source_asserted"]
-            can = data["canonical"]
-            # Distinct field locations must both be modeled.
-            self.assertTrue(
-                "source_operator_id" in src or "source_operator_name" in src,
-                "%s missing source operator identity fields" % path,
-            )
-            self.assertIn("operator_id", can, "%s missing canonical operator_id field" % path)
-            s_id = src.get("source_operator_id")
-            c_id = can.get("operator_id")
-            if s_id and c_id:
-                self.assertNotEqual(
-                    s_id, c_id, "%s raw and canonical operator ids are identical" % path
-                )
-
-    def test_raw_and_canonical_event_are_distinct_fields(self):
-        for _sub, path, data in _iter_observation_files():
-            src = data["source_asserted"]
-            can = data["canonical"]
-            self.assertIn("source_event_id", src, "%s missing source_event_id field" % path)
-            self.assertIn("event_id", can, "%s missing canonical event_id field" % path)
-            s_id = src.get("source_event_id")
-            c_id = can.get("event_id")
-            if s_id and c_id:
-                self.assertNotEqual(
-                    s_id, c_id, "%s raw and canonical event ids are identical" % path
-                )
-
-    def test_no_raw_id_promoted_to_canonical(self):
-        id_pairs = (
-            ("source_event_id", "event_id"),
-            ("source_operator_id", "operator_id"),
-            ("source_market_id", "market_id"),
-            ("source_outcome_id", "outcome_id"),
-            ("source_competition_id", "competition_id"),
-        )
-        for _sub, path, data in _iter_observation_files():
-            src = data["source_asserted"]
-            can = data["canonical"]
-            for s_key, c_key in id_pairs:
-                s_val = src.get(s_key)
-                c_val = can.get(c_key)
-                if s_val and c_val:
-                    self.assertNotEqual(
-                        s_val,
-                        c_val,
-                        "%s promotes raw %s into canonical %s" % (path, s_key, c_key),
-                    )
-            # Participants: canonical ids must be disjoint from source ids.
-            source_pids = {
-                p.get("source_participant_id")
-                for p in src.get("source_participants", [])
-                if p.get("source_participant_id")
-            }
-            canon_pids = {
-                p.get("participant_id")
-                for p in can.get("participants", [])
-                if p.get("participant_id")
-            }
-            overlap = source_pids & canon_pids
-            self.assertFalse(
-                overlap, "%s participant raw ids reused as canonical: %s" % (path, overlap)
+            findings = gov.validate_observation(data)
+            self.assertEqual(
+                findings,
+                [],
+                "%s produced findings: %s" % (path, [(f.code, f.message) for f in findings]),
             )
 
-    def test_ingested_at_not_used_as_source_observed_at(self):
-        for _sub, path, data in _iter_observation_files():
-            ingested = data["provenance"].get("ingested_at")
-            observed = data["source_asserted"].get("source_observed_at")
-            if observed is not None and ingested is not None:
-                self.assertNotEqual(
-                    observed,
-                    ingested,
-                    "%s uses ingested_at as source_observed_at" % path,
-                )
-
-    def test_unresolved_identity_not_represented_as_resolved(self):
-        for _sub, path, data in _iter_observation_files():
-            codes = data["governance"].get("reason_codes", [])
-            can = data["canonical"]
-            for code in codes:
-                field = UNRESOLVED_CANONICAL.get(code)
-                if field is not None:
-                    self.assertIsNone(
-                        can.get(field),
-                        "%s has %s but canonical.%s is resolved" % (path, code, field),
-                    )
-            if "UNRESOLVED_PARTICIPANT_IDENTITY" in codes:
-                for participant in can.get("participants", []):
-                    self.assertIsNone(
-                        participant.get("participant_id"),
-                        "%s claims unresolved participants but one is resolved" % path,
-                    )
-
-    def test_admitted_core_canonical_identities_resolved(self):
+    def test_rejected_fixtures_carry_reason_codes(self):
         for sub, path, data in _iter_observation_files():
-            if sub != "admitted":
-                continue
-            can = data["canonical"]
-            for field in ("event_id", "operator_id", "market_id", "outcome_id"):
-                self.assertIsNotNone(
-                    can.get(field),
-                    "%s ADMITTED but canonical.%s is unresolved" % (path, field),
+            if sub in ("rejected", "quarantined"):
+                self.assertTrue(
+                    data["governance"].get("reason_codes"),
+                    "%s must carry a reason code" % path,
                 )
 
-    def test_admitted_price_format_controlled(self):
+    def test_intended_rejection_reasons_present(self):
+        """The specific representable-rejection fixtures carry their intended reason."""
+        expected = {
+            "02_missing_provider_provenance.json": "MISSING_PROVIDER_PROVENANCE",
+            "03_unsupported_contract_version.json": "INVALID_CONTRACT_VERSION",
+            "04_invalid_price_format.json": "INVALID_PRICE_FORMAT",
+            "01_invalid_price.json": "INVALID_PRICE",
+        }
+        seen = {}
         for sub, path, data in _iter_observation_files():
-            if sub != "admitted":
+            if sub != "rejected":
                 continue
-            fmt = data["source_asserted"].get("price_format")
-            self.assertIn(
-                fmt, VALID_PRICE_FORMATS, "%s ADMITTED with bad price_format %r" % (path, fmt)
-            )
-
-    def test_no_derived_fields_in_source_observations(self):
-        for _sub, path, data in _iter_observation_files():
-            for kind, value in _walk(data):
-                if kind == "key" and value.lower() in FORBIDDEN_DERIVED_KEYS:
-                    self.fail("%s contains derived-analysis field %r" % (path, value))
+            name = os.path.basename(path)
+            if name in expected:
+                seen[name] = data["governance"].get("reason_codes", [])
+        for name, code in expected.items():
+            self.assertIn(name, seen, "missing rejected fixture %s" % name)
+            self.assertIn(code, seen[name], "%s should carry %s" % (name, code))
 
 
 class IdentityMappingTests(unittest.TestCase):
     def _mapping_files(self):
-        directory = os.path.join(FIXTURES_ROOT, "identity-mappings")
-        return list(_iter_json_files(directory))
+        return list(_iter_json_files(os.path.join(FIXTURES_ROOT, "identity-mappings")))
 
     def test_mapping_fixtures_exist(self):
         self.assertTrue(self._mapping_files(), "no identity-mapping fixtures found")
@@ -363,20 +216,7 @@ class IdentityMappingTests(unittest.TestCase):
             data = _load_json(path)
             self.assertIn(data.get("decision_basis"), MAPPING_DECISION_BASES, path)
             self.assertIn(data.get("status"), MAPPING_STATUSES, path)
-            self.assertIn(
-                data.get("entity_type"),
-                {
-                    "sport",
-                    "competition",
-                    "participant",
-                    "event",
-                    "operator",
-                    "market",
-                    "outcome",
-                    "jurisdiction",
-                },
-                path,
-            )
+            self.assertIn(data.get("entity_type"), MAPPING_ENTITY_TYPES, path)
 
     def test_mapping_has_source_key_and_distinct_canonical(self):
         for path in self._mapping_files():
@@ -397,8 +237,7 @@ class IdentityMappingTests(unittest.TestCase):
 
 class SourceProfileTests(unittest.TestCase):
     def _profile_files(self):
-        directory = os.path.join(FIXTURES_ROOT, "source-profiles")
-        return list(_iter_json_files(directory))
+        return list(_iter_json_files(os.path.join(FIXTURES_ROOT, "source-profiles")))
 
     def test_profile_fixtures_exist(self):
         self.assertTrue(self._profile_files(), "no source-profile fixtures found")
@@ -410,19 +249,58 @@ class SourceProfileTests(unittest.TestCase):
             for capability in RIGHTS_CAPABILITIES:
                 self.assertIn(capability, matrix, "%s missing capability %s" % (path, capability))
             for capability, posture in matrix.items():
-                self.assertIn(
-                    capability, RIGHTS_CAPABILITIES, "%s unknown capability %s" % (path, capability)
-                )
-                self.assertIn(
-                    posture, RIGHTS_POSTURES, "%s bad posture %r for %s" % (path, posture, capability)
-                )
+                self.assertIn(capability, RIGHTS_CAPABILITIES, "%s unknown %s" % (path, capability))
+                self.assertIn(posture, RIGHTS_POSTURES, "%s bad posture %r" % (path, posture))
+
+
+class SchemaValidatorDriftTests(unittest.TestCase):
+    """The JSON Schema contracts and the validator must share vocabularies."""
+
+    def _schema(self, name):
+        return _load_json(os.path.join(CONTRACTS_ROOT, name))
+
+    def test_envelope_schema_vocab_matches_validator(self):
+        schema = self._schema("observation-envelope.schema.json")
+        defs = schema["$defs"]
+        self.assertEqual(
+            set(defs["admission_state"]["enum"]), set(gov.ADMISSION_STATES),
+            "admission_state vocab drift",
+        )
+        self.assertEqual(
+            set(defs["reason_code"]["enum"]), set(gov.REASON_CODES),
+            "reason_code vocab drift",
+        )
+        self.assertEqual(
+            set(defs["supported_price_format"]["enum"]), set(gov.VALID_PRICE_FORMATS),
+            "supported_price_format vocab drift",
+        )
+
+    def test_mapping_schema_vocab_matches_constants(self):
+        schema = self._schema("identity-mapping.schema.json")
+        props = schema["properties"]
+        self.assertEqual(set(props["entity_type"]["enum"]), MAPPING_ENTITY_TYPES)
+        self.assertEqual(set(props["status"]["enum"]), MAPPING_STATUSES)
+        self.assertEqual(set(props["decision_basis"]["enum"]), MAPPING_DECISION_BASES)
+
+    def test_source_profile_schema_postures_match_constants(self):
+        schema = self._schema("source-profile.schema.json")
+        self.assertEqual(set(schema["$defs"]["posture"]["enum"]), RIGHTS_POSTURES)
+        matrix_props = schema["properties"]["rights_matrix"]["properties"]
+        self.assertEqual(set(matrix_props.keys()), RIGHTS_CAPABILITIES)
+
+    def test_all_contract_schemas_declare_2020_12(self):
+        for path in _iter_json_files(CONTRACTS_ROOT):
+            data = _load_json(path)
+            self.assertEqual(
+                data.get("$schema"),
+                "https://json-schema.org/draft/2020-12/schema",
+                "%s is not JSON Schema draft 2020-12" % path,
+            )
 
 
 class RepositoryHygieneTests(unittest.TestCase):
     def _all_governed_files(self):
-        paths = list(_iter_json_files(FIXTURES_ROOT))
-        paths.extend(_iter_json_files(CONTRACTS_ROOT))
-        return paths
+        return list(_iter_json_files(FIXTURES_ROOT)) + list(_iter_json_files(CONTRACTS_ROOT))
 
     def test_no_obvious_secrets(self):
         for path in self._all_governed_files():
@@ -431,33 +309,18 @@ class RepositoryHygieneTests(unittest.TestCase):
                 if kind == "key":
                     lowered = value.lower()
                     for needle in SECRET_KEY_SUBSTRINGS:
-                        self.assertNotIn(
-                            needle, lowered, "%s has secret-like key %r" % (path, value)
-                        )
+                        self.assertNotIn(needle, lowered, "%s secret-like key %r" % (path, value))
                 elif kind == "value" and isinstance(value, str):
                     lowered = value.lower()
                     for marker in SECRET_VALUE_MARKERS:
-                        self.assertNotIn(
-                            marker, lowered, "%s has secret-like value in %r" % (path, value)
-                        )
+                        self.assertNotIn(marker, lowered, "%s secret-like value %r" % (path, value))
 
     def test_contracts_and_fixtures_have_no_vendor_names(self):
         for path in self._all_governed_files():
             with open(path, "r", encoding="utf-8") as handle:
                 text = handle.read().lower()
             for vendor in VENDOR_DENYLIST:
-                self.assertNotIn(
-                    vendor, text, "%s contains vendor-specific name %r" % (path, vendor)
-                )
-
-    def test_contract_schemas_declare_2020_12(self):
-        for path in _iter_json_files(CONTRACTS_ROOT):
-            data = _load_json(path)
-            self.assertEqual(
-                data.get("$schema"),
-                "https://json-schema.org/draft/2020-12/schema",
-                "%s is not JSON Schema draft 2020-12" % path,
-            )
+                self.assertNotIn(vendor, text, "%s contains vendor name %r" % (path, vendor))
 
 
 if __name__ == "__main__":  # pragma: no cover
