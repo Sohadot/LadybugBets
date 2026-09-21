@@ -77,6 +77,15 @@ Both cases fail closed. Neither is resolved by picking a "best" candidate. The
 observation is quarantined with the corresponding `UNRESOLVED_*` or `AMBIGUOUS_*`
 reason code, and the canonical identity remains null.
 
+The reason-code vocabulary is **symmetric across the resolver's scope**: every
+entity type above (`sport`, `competition`, `participant`, `event`, `operator`,
+`market`, `outcome`, `jurisdiction`) has both an `UNRESOLVED_*_IDENTITY` and an
+`AMBIGUOUS_*_IDENTITY` code, so any resolver outcome is expressible (see
+[OBSERVATION_CONTRACT.md](OBSERVATION_CONTRACT.md#admission-reason-codes)). This
+is about *expressibility*, not a requirement to resolve every entity for every
+observation; usage remains context-sensitive (for example, jurisdiction
+resolution is not mechanically required).
+
 ## Event identity resolution
 
 Event identity is resolved conservatively and is **participant-bearing**

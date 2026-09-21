@@ -34,6 +34,39 @@ while still being **blocked from public display** because its source-rights
 posture is unknown or does not permit publication (see
 [SOURCE_GOVERNANCE.md](SOURCE_GOVERNANCE.md) and DEC-018).
 
+## Envelope lifecycle and scope
+
+**LBOC-001 represents candidate records across all three governed assessment
+outcomes — `ADMITTED`, `QUARANTINED`, and `REJECTED` — not only already-valid
+observations.**
+
+This follows directly from modeling `REJECTED` as a first-class admission state:
+a rejected record must be representable well enough to **preserve its provenance
+and explain why it was rejected**. Therefore the envelope's *base shape* is
+deliberately permissive — it can carry a malformed price, an unsupported price
+format, a missing `provider_id`, or an unsupported `contract_version` — so that
+the rejection itself is expressible.
+
+Being representable as a candidate is **not** the same as being a governed market
+observation:
+
+- A `REJECTED` record is a recorded rejection with provenance. It is **not** an
+  admitted market observation and must never be used analytically or published.
+- A `QUARANTINED` record is retained but not yet usable analytically.
+- Only an `ADMITTED` record is a governed source observation for internal use
+  (and even then, publication is a separate gate — DEC-018).
+
+Accordingly, the contract has two tiers of constraint:
+
+1. **Base tier** — the minimum shape every candidate must have so it can be
+   assessed and, if necessary, rejected with a reason.
+2. **Admission tier** — stronger invariants that `ADMITTED` (and, where noted,
+   `QUARANTINED`) records must additionally satisfy. These are specified in
+   [Enforcement layers](#enforcement-layers-schema-vs-validator).
+
+This tiering keeps a single contract (no competing second envelope) while making
+the machine layer encode the governance law, not merely describe it.
+
 ## Envelope structure
 
 The governed observation envelope has five clearly separated sections. A value
@@ -73,6 +106,13 @@ Sprint 1.** It is opaque and stable; nothing here fixes how it is minted.
 
 `source_reference` is provenance metadata: it says *where the record came from*,
 never *which sporting entity it is about*.
+
+For `ADMITTED` and `QUARANTINED` records, at least one governed **source locator**
+must be present — a non-empty `source_reference` **or** a non-empty
+`source_record_id` — so a governed number remains traceable. A locator is never
+fabricated when the source does not provide one; if neither exists and
+traceability cannot be established, the record fails closed
+(`MISSING_SOURCE_LOCATOR`).
 
 ### 3. Raw / source-asserted identity (`source_asserted`)
 
@@ -197,16 +237,29 @@ discarded.**
 
 ## Admission reason codes
 
-Controlled initial vocabulary (categorical, not scores):
+Controlled vocabulary (categorical, not scores). The identity codes are
+**symmetric** — for every entity that [LBIR-001](IDENTITY_RESOLUTION.md) can
+report as unresolved or ambiguous, the vocabulary can express that outcome. This
+does **not** require resolving every entity for every observation (e.g.
+jurisdiction resolution is not mechanically required); the vocabulary must merely
+be *capable* of expressing the resolver's outcomes.
 
-- `UNRESOLVED_EVENT_IDENTITY`
-- `AMBIGUOUS_EVENT_IDENTITY`
-- `UNRESOLVED_OPERATOR_IDENTITY`
-- `AMBIGUOUS_OPERATOR_IDENTITY`
-- `UNRESOLVED_MARKET_IDENTITY`
-- `UNRESOLVED_OUTCOME_IDENTITY`
-- `UNRESOLVED_PARTICIPANT_IDENTITY`
+Identity codes (one `UNRESOLVED_*` and one `AMBIGUOUS_*` per entity):
+
+- `sport` → `UNRESOLVED_SPORT_IDENTITY`, `AMBIGUOUS_SPORT_IDENTITY`
+- `competition` → `UNRESOLVED_COMPETITION_IDENTITY`, `AMBIGUOUS_COMPETITION_IDENTITY`
+- `participant` → `UNRESOLVED_PARTICIPANT_IDENTITY`, `AMBIGUOUS_PARTICIPANT_IDENTITY`
+- `event` → `UNRESOLVED_EVENT_IDENTITY`, `AMBIGUOUS_EVENT_IDENTITY`
+- `operator` → `UNRESOLVED_OPERATOR_IDENTITY`, `AMBIGUOUS_OPERATOR_IDENTITY`
+- `market` → `UNRESOLVED_MARKET_IDENTITY`, `AMBIGUOUS_MARKET_IDENTITY`
+- `outcome` → `UNRESOLVED_OUTCOME_IDENTITY`, `AMBIGUOUS_OUTCOME_IDENTITY`
+- `jurisdiction` → `UNRESOLVED_JURISDICTION_IDENTITY`, `AMBIGUOUS_JURISDICTION_IDENTITY`
+
+Non-identity codes:
+
 - `MISSING_REQUIRED_SOURCE_FIELD`
+- `MISSING_SOURCE_LOCATOR` — no governed source locator (`source_reference` or
+  `source_record_id`), so the observation is not traceable.
 - `INVALID_PRICE`
 - `INVALID_PRICE_FORMAT`
 - `MISSING_PROVIDER_PROVENANCE`
@@ -216,7 +269,61 @@ Controlled initial vocabulary (categorical, not scores):
 
 When an `UNRESOLVED_*` or `AMBIGUOUS_*` identity code is present, the
 corresponding canonical identity **must** be represented as unresolved (null /
-absent). An unresolved identity is never represented as resolved.
+absent): `sport`→`sport`, `competition`→`competition_id`, `event`→`event_id`,
+`operator`→`operator_id`, `market`→`market_id`, `outcome`→`outcome_id`,
+`jurisdiction`→`jurisdiction`, and `participant`→ no canonical `participant_id`
+is populated. An unresolved identity is never represented as resolved.
+
+## Price validity
+
+Price validity is a governed executable invariant grounded in
+[METHODOLOGY.md](METHODOLOGY.md). The base envelope leaves `price` loose so a
+malformed `REJECTED` candidate is representable, but an `ADMITTED` or
+`QUARANTINED` price observation must pass the format-aware rule below (otherwise
+it is `REJECTED` with `INVALID_PRICE`, or `INVALID_PRICE_FORMAT` for an
+unsupported format). These are validity rules only — **no profitability or "edge"
+semantics** (DEC-012 stands).
+
+| `price_format` | Valid iff |
+| --- | --- |
+| `decimal` | `price` is numeric and `> 1.0` (implied probability `1/price` is in `(0, 1)`). |
+| `american` | `price` is integer-valued and `|price| >= 100` (matches the `100/(A+100)` and `|A|/(|A|+100)` forms). |
+| `fractional` | `price` is a string `"a/b"` with positive integers `a >= 1` and `b >= 1` (implied probability `b/(a+b)`). |
+
+Any other or malformed `price_format` is `INVALID_PRICE_FORMAT`. Where a case
+cannot be ratified safely from existing methodology, the record **fails closed**
+(is not admitted) rather than being guessed valid.
+
+## Enforcement layers (schema vs. validator)
+
+The governance law is encoded in **two synchronized machine layers**, and this
+section is authoritative about which layer enforces which invariant.
+
+- **JSON Schema** ([`contracts/observation-envelope.schema.json`](../contracts/observation-envelope.schema.json))
+  is a portable, vendor-neutral contract. Using draft 2020-12 conditionals it
+  enforces, for `ADMITTED`/`QUARANTINED`: supported `contract_version` (`1.0.0`),
+  non-empty `provider_id`, at least one source locator, and a supported
+  `price_format`; and for `ADMITTED`: non-null core canonical identities
+  (`event_id`, `operator_id`, `market_id`, `outcome_id`) and at least one
+  resolved canonical participant with a role (DEC-017). It also carries the
+  controlled vocabularies (admission states, reason codes, supported price
+  formats) as `$defs` enums.
+- **Standard-library validator**
+  ([`governance/validate_observation.py`](../governance/validate_observation.py))
+  enforces everything the schema does **plus** the invariants that generic JSON
+  Schema cannot express cleanly: format-aware **price value** validity, the
+  `ingested_at ≠ source_observed_at` non-conflation rule, the raw-id-never-
+  promoted-to-canonical rule, the unresolved/ambiguous → canonical-null rule
+  across the full identity vocabulary, and the absence of derived-analysis
+  fields. It parses an already-loaded candidate and returns deterministic
+  findings; it does not call APIs, read a database, resolve identities, generate
+  canonical identity, mutate the record, or publish.
+
+The Python standard library ships no full JSON Schema engine, so the repository
+gate does **not** claim JSON-Schema conformance from `json.loads()` alone. The
+stdlib validator is the repository-local semantic gate; the JSON Schema is the
+portable contract. Tests introspect both and assert their controlled
+vocabularies match, so the two encodings cannot silently drift.
 
 ## Source observation immutability and derived separation
 

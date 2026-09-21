@@ -2,10 +2,53 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://ladybugbets.example/contracts/observation-envelope.schema.json",
   "title": "LBOC-001 Observation Envelope",
-  "description": "Governed logical envelope of a LadybugBets source observation. Vendor-neutral governance contract, not a database schema. See docs/OBSERVATION_CONTRACT.md.",
+  "description": "Governed logical envelope of a LadybugBets candidate observation across all three assessment outcomes (ADMITTED / QUARANTINED / REJECTED). Vendor-neutral governance contract, not a database schema. The base shape is permissive enough to REPRESENT a defective REJECTED candidate (so a rejection can be recorded with provenance and a reason); ADMITTED and QUARANTINED candidates must satisfy the stronger conditional invariants below. Price VALUE validity (e.g. decimal > 1) is enforced by the standard-library validator (governance/validate_observation.py), not by this schema; see docs/OBSERVATION_CONTRACT.md for which invariant lives at which layer.",
   "type": "object",
   "additionalProperties": false,
   "required": ["contract", "provenance", "source_asserted", "canonical", "governance"],
+  "$defs": {
+    "admission_state": {
+      "type": "string",
+      "enum": ["ADMITTED", "QUARANTINED", "REJECTED"]
+    },
+    "reason_code": {
+      "type": "string",
+      "enum": [
+        "UNRESOLVED_SPORT_IDENTITY",
+        "AMBIGUOUS_SPORT_IDENTITY",
+        "UNRESOLVED_COMPETITION_IDENTITY",
+        "AMBIGUOUS_COMPETITION_IDENTITY",
+        "UNRESOLVED_PARTICIPANT_IDENTITY",
+        "AMBIGUOUS_PARTICIPANT_IDENTITY",
+        "UNRESOLVED_EVENT_IDENTITY",
+        "AMBIGUOUS_EVENT_IDENTITY",
+        "UNRESOLVED_OPERATOR_IDENTITY",
+        "AMBIGUOUS_OPERATOR_IDENTITY",
+        "UNRESOLVED_MARKET_IDENTITY",
+        "AMBIGUOUS_MARKET_IDENTITY",
+        "UNRESOLVED_OUTCOME_IDENTITY",
+        "AMBIGUOUS_OUTCOME_IDENTITY",
+        "UNRESOLVED_JURISDICTION_IDENTITY",
+        "AMBIGUOUS_JURISDICTION_IDENTITY",
+        "MISSING_REQUIRED_SOURCE_FIELD",
+        "MISSING_SOURCE_LOCATOR",
+        "INVALID_PRICE",
+        "INVALID_PRICE_FORMAT",
+        "MISSING_PROVIDER_PROVENANCE",
+        "TEMPORAL_AMBIGUITY",
+        "CONFLICTING_SOURCE_ASSERTIONS",
+        "INVALID_CONTRACT_VERSION"
+      ]
+    },
+    "supported_price_format": {
+      "type": "string",
+      "enum": ["decimal", "american", "fractional"]
+    },
+    "nonempty_string": {
+      "type": "string",
+      "minLength": 1
+    }
+  },
   "properties": {
     "contract": {
       "type": "object",
@@ -15,13 +58,13 @@
       "properties": {
         "contract_version": {
           "type": "string",
-          "description": "LBOC contract version this envelope conforms to.",
+          "description": "Declared contract version. The base shape accepts any syntactically valid semver so INVALID_CONTRACT_VERSION is representable; ADMITTED/QUARANTINED are constrained to 1.0.0 below.",
           "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
         },
         "observation_id": {
           "type": "string",
-          "description": "LadybugBets opaque, stable identifier. Generation algorithm NOT ratified in Sprint 1.",
-          "minLength": 1
+          "minLength": 1,
+          "description": "LadybugBets opaque, stable identifier. Generation algorithm NOT ratified in Sprint 1."
         }
       }
     },
@@ -32,9 +75,8 @@
       "required": ["provider_id", "ingested_at"],
       "properties": {
         "provider_id": {
-          "type": "string",
-          "description": "Governed LadybugBets identity of the upstream provider/feed.",
-          "minLength": 1
+          "type": ["string", "null"],
+          "description": "Governed LadybugBets identity of the upstream provider. Nullable in the base shape so MISSING_PROVIDER_PROVENANCE is representable; required non-empty for ADMITTED/QUARANTINED."
         },
         "source_reference": {
           "type": ["string", "null"],
@@ -42,12 +84,12 @@
         },
         "source_record_id": {
           "type": ["string", "null"],
-          "description": "Provider-native record identifier, when supplied. Source-asserted; never substituted for a canonical id."
+          "description": "Provider-native record identifier, when supplied."
         },
         "ingested_at": {
           "type": "string",
-          "description": "When LadybugBets received/recorded the observation (RFC3339). Ingestion time, never source quote time.",
-          "format": "date-time"
+          "format": "date-time",
+          "description": "When LadybugBets received/recorded the observation. Ingestion time, never source quote time."
         }
       }
     },
@@ -70,7 +112,6 @@
         "source_outcome_label": { "type": ["string", "null"] },
         "source_participants": {
           "type": "array",
-          "description": "Participants as asserted by the source.",
           "items": {
             "type": "object",
             "additionalProperties": false,
@@ -81,22 +122,18 @@
             }
           }
         },
-        "source_start_time": {
-          "type": ["string", "null"],
-          "description": "Scheduled start exactly as asserted, including the source's stated offset."
-        },
+        "source_start_time": { "type": ["string", "null"] },
         "source_observed_at": {
           "type": ["string", "null"],
           "description": "Source quote-state timestamp, when trustworthy. May be absent/null."
         },
         "source_jurisdiction": { "type": ["string", "null"] },
         "price": {
-          "description": "The price as asserted by the source. Structural validity (e.g. decimal > 1) is enforced by the admission process, not by this envelope schema, so that malformed-price records can still be represented for REJECTED fixtures."
+          "description": "The price as asserted by the source. Left loose in the base shape so a malformed price is representable for a REJECTED candidate; VALUE validity for ADMITTED/QUARANTINED is enforced by the standard-library validator."
         },
         "price_format": {
           "type": ["string", "null"],
-          "description": "Controlled vocabulary. A value outside the enum is an INVALID_PRICE_FORMAT condition handled at admission.",
-          "enum": ["decimal", "american", "fractional", null]
+          "description": "Declared format. Left as a free string/null in the base shape so INVALID_PRICE_FORMAT is representable; constrained to the supported vocabulary for ADMITTED/QUARANTINED below."
         }
       }
     },
@@ -128,10 +165,7 @@
         "outcome_id": { "type": ["string", "null"] },
         "outcome": { "type": ["string", "null"] },
         "jurisdiction": { "type": ["string", "null"] },
-        "start_time": {
-          "type": ["string", "null"],
-          "description": "Lossless canonical representation of the same instant as source_start_time. Not an independently asserted time."
-        }
+        "start_time": { "type": ["string", "null"] }
       }
     },
     "governance": {
@@ -140,76 +174,121 @@
       "additionalProperties": false,
       "required": ["admission_state"],
       "properties": {
-        "admission_state": {
-          "type": "string",
-          "enum": ["ADMITTED", "QUARANTINED", "REJECTED"]
-        },
+        "admission_state": { "$ref": "#/$defs/admission_state" },
         "reason_codes": {
           "type": "array",
-          "description": "Controlled categorical reason codes. Non-empty for QUARANTINED and REJECTED; empty for ADMITTED.",
-          "items": {
-            "type": "string",
-            "enum": [
-              "UNRESOLVED_EVENT_IDENTITY",
-              "AMBIGUOUS_EVENT_IDENTITY",
-              "UNRESOLVED_OPERATOR_IDENTITY",
-              "AMBIGUOUS_OPERATOR_IDENTITY",
-              "UNRESOLVED_MARKET_IDENTITY",
-              "UNRESOLVED_OUTCOME_IDENTITY",
-              "UNRESOLVED_PARTICIPANT_IDENTITY",
-              "MISSING_REQUIRED_SOURCE_FIELD",
-              "INVALID_PRICE",
-              "INVALID_PRICE_FORMAT",
-              "MISSING_PROVIDER_PROVENANCE",
-              "TEMPORAL_AMBIGUITY",
-              "CONFLICTING_SOURCE_ASSERTIONS",
-              "INVALID_CONTRACT_VERSION"
-            ]
+          "items": { "$ref": "#/$defs/reason_code" }
+        },
+        "supersedes_observation_id": { "type": ["string", "null"] },
+        "notes": { "type": ["string", "null"] }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "$comment": "ADMITTED must carry no reason codes.",
+      "if": {
+        "required": ["governance"],
+        "properties": {
+          "governance": {
+            "required": ["admission_state"],
+            "properties": { "admission_state": { "const": "ADMITTED" } }
           }
-        },
-        "supersedes_observation_id": {
-          "type": ["string", "null"],
-          "description": "Append-only correction linkage. The superseded observation remains traceable."
-        },
-        "notes": {
-          "type": ["string", "null"],
-          "description": "Optional human-readable governance note. Never a source assertion or a derived value."
         }
       },
-      "allOf": [
-        {
-          "if": {
+      "then": {
+        "properties": {
+          "governance": {
+            "properties": { "reason_codes": { "maxItems": 0 } }
+          }
+        }
+      }
+    },
+    {
+      "$comment": "QUARANTINED and REJECTED must carry at least one reason code.",
+      "if": {
+        "required": ["governance"],
+        "properties": {
+          "governance": {
+            "required": ["admission_state"],
+            "properties": { "admission_state": { "enum": ["QUARANTINED", "REJECTED"] } }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "governance": {
+            "required": ["reason_codes"],
+            "properties": { "reason_codes": { "minItems": 1 } }
+          }
+        }
+      }
+    },
+    {
+      "$comment": "ADMITTED/QUARANTINED: supported contract version, governed provenance, a source locator, supported price format.",
+      "if": {
+        "required": ["governance"],
+        "properties": {
+          "governance": {
+            "required": ["admission_state"],
+            "properties": { "admission_state": { "enum": ["ADMITTED", "QUARANTINED"] } }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "contract": {
+            "properties": { "contract_version": { "const": "1.0.0" } }
+          },
+          "provenance": {
+            "properties": { "provider_id": { "$ref": "#/$defs/nonempty_string" } },
+            "anyOf": [
+              { "properties": { "source_reference": { "$ref": "#/$defs/nonempty_string" } }, "required": ["source_reference"] },
+              { "properties": { "source_record_id": { "$ref": "#/$defs/nonempty_string" } }, "required": ["source_record_id"] }
+            ]
+          },
+          "source_asserted": {
+            "properties": { "price_format": { "$ref": "#/$defs/supported_price_format" } }
+          }
+        }
+      }
+    },
+    {
+      "$comment": "ADMITTED: core canonical identities resolved and at least one resolved participant with a role (DEC-017).",
+      "if": {
+        "required": ["governance"],
+        "properties": {
+          "governance": {
+            "required": ["admission_state"],
             "properties": { "admission_state": { "const": "ADMITTED" } }
-          },
-          "then": {
-            "properties": {
-              "reason_codes": { "maxItems": 0 }
-            }
           }
-        },
-        {
-          "if": {
-            "properties": { "admission_state": { "const": "QUARANTINED" } }
-          },
-          "then": {
-            "required": ["reason_codes"],
+        }
+      },
+      "then": {
+        "properties": {
+          "canonical": {
+            "required": ["event_id", "operator_id", "market_id", "outcome_id", "participants"],
             "properties": {
-              "reason_codes": { "minItems": 1 }
-            }
-          }
-        },
-        {
-          "if": {
-            "properties": { "admission_state": { "const": "REJECTED" } }
-          },
-          "then": {
-            "required": ["reason_codes"],
-            "properties": {
-              "reason_codes": { "minItems": 1 }
+              "event_id": { "$ref": "#/$defs/nonempty_string" },
+              "operator_id": { "$ref": "#/$defs/nonempty_string" },
+              "market_id": { "$ref": "#/$defs/nonempty_string" },
+              "outcome_id": { "$ref": "#/$defs/nonempty_string" },
+              "participants": {
+                "type": "array",
+                "minItems": 1,
+                "contains": {
+                  "type": "object",
+                  "required": ["participant_id", "role"],
+                  "properties": {
+                    "participant_id": { "$ref": "#/$defs/nonempty_string" },
+                    "role": { "$ref": "#/$defs/nonempty_string" }
+                  }
+                }
+              }
             }
           }
         }
-      ]
+      }
     }
-  }
+  ]
 }

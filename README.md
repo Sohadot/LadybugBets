@@ -79,8 +79,9 @@ selected or built.
 - [docs/TEMPORAL_GOVERNANCE.md](docs/TEMPORAL_GOVERNANCE.md) — temporal evidence and freshness policy
 - [docs/CONFLICT_AND_DEDUPLICATION.md](docs/CONFLICT_AND_DEDUPLICATION.md) — duplicate / conflict / revision / independent observation
 - [docs/SOURCE_GOVERNANCE.md](docs/SOURCE_GOVERNANCE.md) — source rights; admission is not publication authorization
-- Machine-readable contracts (JSON Schema draft 2020-12): [`contracts/observation-envelope.schema.json`](contracts/observation-envelope.schema.json), [`contracts/identity-mapping.schema.json`](contracts/identity-mapping.schema.json), [`contracts/source-profile.schema.json`](contracts/source-profile.schema.json)
-- Synthetic contract fixtures under [`fixtures/observation-contract/`](fixtures/observation-contract/), validated by [`tests/test_contract_fixtures.py`](tests/test_contract_fixtures.py) (Python standard library only)
+- Machine-readable contracts (JSON Schema draft 2020-12): [`contracts/observation-envelope.schema.json`](contracts/observation-envelope.schema.json) (state-aware: base tier represents any candidate; ADMITTED/QUARANTINED satisfy stronger conditional invariants), [`contracts/identity-mapping.schema.json`](contracts/identity-mapping.schema.json), [`contracts/source-profile.schema.json`](contracts/source-profile.schema.json)
+- Reusable deterministic validator [`governance/validate_observation.py`](governance/validate_observation.py) — the repository-local semantic gate (standard library only; no APIs, database, identity generation, or publication). Enforcement layers are documented in [docs/OBSERVATION_CONTRACT.md](docs/OBSERVATION_CONTRACT.md#enforcement-layers-schema-vs-validator).
+- Synthetic contract fixtures under [`fixtures/observation-contract/`](fixtures/observation-contract/), validated by [`tests/test_contract_fixtures.py`](tests/test_contract_fixtures.py) and [`tests/test_admission_validator.py`](tests/test_admission_validator.py) (fixture consistency, schema/validator vocabulary-drift checks, and negative/mutation tests)
 
 ## Legal and responsible-use posture
 
