@@ -1,0 +1,13 @@
+{
+  "mapping_version": "1.0.0",
+  "mapping_id": "lbmap_pt_0001",
+  "provider_id": "PRV_ALPHA",
+  "entity_type": "participant",
+  "source_native_id": "team-100",
+  "source_label": "Violet FC",
+  "canonical_id": "lbteam_0001",
+  "status": "active",
+  "created_at": "2027-02-01T09:05:00Z",
+  "decision_basis": "governed_registry_entry",
+  "evidence_reference": "governance/registry/participants#lbteam_0001"
+}

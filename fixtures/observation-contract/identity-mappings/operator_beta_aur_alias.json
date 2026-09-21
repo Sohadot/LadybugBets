@@ -1,0 +1,13 @@
+{
+  "mapping_version": "1.0.0",
+  "mapping_id": "lbmap_op_0002",
+  "provider_id": "PRV_BETA",
+  "entity_type": "operator",
+  "source_native_id": "AUR",
+  "source_label": "AuroraSportsbook",
+  "canonical_id": "lbop_0001",
+  "status": "active",
+  "created_at": "2027-02-03T11:30:00Z",
+  "decision_basis": "curated_alias",
+  "evidence_reference": "governance/registry/operators#lbop_0001/aliases"
+}

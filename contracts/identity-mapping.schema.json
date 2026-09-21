@@ -1,0 +1,93 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ladybugbets.example/contracts/identity-mapping.schema.json",
+  "title": "LBIR-001 Identity Mapping",
+  "description": "Vendor-neutral governed record mapping a provider-native source identity to a LadybugBets canonical identity. Governance contract, not a database schema. See docs/IDENTITY_RESOLUTION.md.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "mapping_version",
+    "mapping_id",
+    "provider_id",
+    "entity_type",
+    "canonical_id",
+    "status",
+    "created_at",
+    "decision_basis"
+  ],
+  "properties": {
+    "mapping_version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$",
+      "description": "Version of the mapping contract this record conforms to."
+    },
+    "mapping_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Opaque stable identifier for this mapping record."
+    },
+    "provider_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Governed LadybugBets identity of the provider whose source identity is being mapped."
+    },
+    "entity_type": {
+      "type": "string",
+      "enum": [
+        "sport",
+        "competition",
+        "participant",
+        "event",
+        "operator",
+        "market",
+        "outcome",
+        "jurisdiction"
+      ]
+    },
+    "source_native_id": {
+      "type": ["string", "null"],
+      "description": "The provider-native identifier, when available."
+    },
+    "source_label": {
+      "type": ["string", "null"],
+      "description": "The provider-native label, when available. A curated alias resolves only if it already exists as a governed mapping."
+    },
+    "canonical_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The LadybugBets canonical identity this source identity resolves to."
+    },
+    "status": {
+      "type": "string",
+      "enum": ["active", "proposed", "deprecated", "rejected"],
+      "description": "Governance status of the mapping. Only 'active' mappings resolve identity."
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "decision_basis": {
+      "type": "string",
+      "enum": [
+        "governed_registry_entry",
+        "curated_alias",
+        "manual_review",
+        "provider_declared_identifier"
+      ],
+      "description": "The governed deterministic basis for the mapping. Fuzzy/approximate/AI similarity is NOT a permitted basis for automatic assignment (LBIR-001)."
+    },
+    "evidence_reference": {
+      "type": ["string", "null"],
+      "description": "Pointer to the evidence supporting the mapping decision. Reference only; no secrets or private contents."
+    }
+  },
+  "allOf": [
+    {
+      "description": "A mapping must carry at least one source-side key to be resolvable: a native id and/or a label.",
+      "anyOf": [
+        { "required": ["source_native_id"], "properties": { "source_native_id": { "type": "string" } } },
+        { "required": ["source_label"], "properties": { "source_label": { "type": "string" } } }
+      ]
+    }
+  ]
+}

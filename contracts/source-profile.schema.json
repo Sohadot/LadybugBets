@@ -1,0 +1,78 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ladybugbets.example/contracts/source-profile.schema.json",
+  "title": "Source Profile",
+  "description": "Vendor-neutral governance metadata about a data provider and its rights posture. No secrets, credentials, pricing, or private terms. See docs/SOURCE_GOVERNANCE.md.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["provider_id", "provider_name", "access_basis", "rights_matrix", "qualification_status"],
+  "properties": {
+    "provider_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Governed LadybugBets identity of the provider."
+    },
+    "provider_name": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Human-readable, public-safe provider name."
+    },
+    "access_basis": {
+      "type": "string",
+      "enum": ["public", "licensed", "agreement", "unknown"],
+      "description": "Basis of access, described in public-safe terms only."
+    },
+    "terms_reference": {
+      "type": ["string", "null"],
+      "description": "Pointer to governing terms/evidence. Reference only, never the contents."
+    },
+    "terms_checked_date": {
+      "type": ["string", "null"],
+      "format": "date",
+      "description": "Date the terms posture was last reviewed."
+    },
+    "attribution_requirements": {
+      "type": ["string", "null"],
+      "description": "Attribution the source requires when its data is shown."
+    },
+    "geographic_restrictions": {
+      "type": ["string", "null"],
+      "description": "Geographic restrictions, if any."
+    },
+    "rights_matrix": {
+      "type": "object",
+      "description": "Each capability is tracked independently. Access does not imply retain/publish/redistribute.",
+      "additionalProperties": false,
+      "required": [
+        "ingest_use",
+        "cache",
+        "retain_historical",
+        "derive_calculations",
+        "public_display",
+        "redistribute_raw",
+        "redistribute_derived"
+      ],
+      "properties": {
+        "ingest_use": { "$ref": "#/$defs/posture" },
+        "cache": { "$ref": "#/$defs/posture" },
+        "retain_historical": { "$ref": "#/$defs/posture" },
+        "derive_calculations": { "$ref": "#/$defs/posture" },
+        "public_display": { "$ref": "#/$defs/posture" },
+        "redistribute_raw": { "$ref": "#/$defs/posture" },
+        "redistribute_derived": { "$ref": "#/$defs/posture" }
+      }
+    },
+    "qualification_status": {
+      "type": "string",
+      "enum": ["unqualified", "under_review", "qualified"],
+      "description": "Overall governed status. Real qualification belongs to Sprint 2."
+    }
+  },
+  "$defs": {
+    "posture": {
+      "type": "string",
+      "enum": ["ALLOWED", "PROHIBITED", "UNKNOWN"],
+      "description": "Controlled rights posture. UNKNOWN fails closed for publication."
+    }
+  }
+}

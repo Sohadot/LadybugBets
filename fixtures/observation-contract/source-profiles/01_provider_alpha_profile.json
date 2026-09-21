@@ -1,0 +1,19 @@
+{
+  "provider_id": "PRV_ALPHA",
+  "provider_name": "Provider Alpha (synthetic)",
+  "access_basis": "licensed",
+  "terms_reference": "governance/source-terms/PRV_ALPHA#ref",
+  "terms_checked_date": "2027-02-15",
+  "attribution_requirements": "Attribute observations to the provider where displayed.",
+  "geographic_restrictions": null,
+  "rights_matrix": {
+    "ingest_use": "ALLOWED",
+    "cache": "ALLOWED",
+    "retain_historical": "UNKNOWN",
+    "derive_calculations": "ALLOWED",
+    "public_display": "UNKNOWN",
+    "redistribute_raw": "PROHIBITED",
+    "redistribute_derived": "UNKNOWN"
+  },
+  "qualification_status": "under_review"
+}

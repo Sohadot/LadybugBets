@@ -1,0 +1,215 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ladybugbets.example/contracts/observation-envelope.schema.json",
+  "title": "LBOC-001 Observation Envelope",
+  "description": "Governed logical envelope of a LadybugBets source observation. Vendor-neutral governance contract, not a database schema. See docs/OBSERVATION_CONTRACT.md.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["contract", "provenance", "source_asserted", "canonical", "governance"],
+  "properties": {
+    "contract": {
+      "type": "object",
+      "description": "Contract metadata.",
+      "additionalProperties": false,
+      "required": ["contract_version", "observation_id"],
+      "properties": {
+        "contract_version": {
+          "type": "string",
+          "description": "LBOC contract version this envelope conforms to.",
+          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+        },
+        "observation_id": {
+          "type": "string",
+          "description": "LadybugBets opaque, stable identifier. Generation algorithm NOT ratified in Sprint 1.",
+          "minLength": 1
+        }
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "description": "Provider/provenance identity and ingestion metadata.",
+      "additionalProperties": false,
+      "required": ["provider_id", "ingested_at"],
+      "properties": {
+        "provider_id": {
+          "type": "string",
+          "description": "Governed LadybugBets identity of the upstream provider/feed.",
+          "minLength": 1
+        },
+        "source_reference": {
+          "type": ["string", "null"],
+          "description": "Reference back to the source record/feed. Provenance, not canonical sporting identity."
+        },
+        "source_record_id": {
+          "type": ["string", "null"],
+          "description": "Provider-native record identifier, when supplied. Source-asserted; never substituted for a canonical id."
+        },
+        "ingested_at": {
+          "type": "string",
+          "description": "When LadybugBets received/recorded the observation (RFC3339). Ingestion time, never source quote time.",
+          "format": "date-time"
+        }
+      }
+    },
+    "source_asserted": {
+      "type": "object",
+      "description": "Values actually asserted by the upstream source. A provider need not supply every native id; absence remains absence.",
+      "additionalProperties": false,
+      "required": ["price", "price_format"],
+      "properties": {
+        "source_event_id": { "type": ["string", "null"] },
+        "source_event_name": { "type": ["string", "null"] },
+        "source_sport_label": { "type": ["string", "null"] },
+        "source_competition_id": { "type": ["string", "null"] },
+        "source_competition_label": { "type": ["string", "null"] },
+        "source_operator_id": { "type": ["string", "null"] },
+        "source_operator_name": { "type": ["string", "null"] },
+        "source_market_id": { "type": ["string", "null"] },
+        "source_market_label": { "type": ["string", "null"] },
+        "source_outcome_id": { "type": ["string", "null"] },
+        "source_outcome_label": { "type": ["string", "null"] },
+        "source_participants": {
+          "type": "array",
+          "description": "Participants as asserted by the source.",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "source_participant_id": { "type": ["string", "null"] },
+              "source_participant_name": { "type": ["string", "null"] },
+              "source_role": { "type": ["string", "null"] }
+            }
+          }
+        },
+        "source_start_time": {
+          "type": ["string", "null"],
+          "description": "Scheduled start exactly as asserted, including the source's stated offset."
+        },
+        "source_observed_at": {
+          "type": ["string", "null"],
+          "description": "Source quote-state timestamp, when trustworthy. May be absent/null."
+        },
+        "source_jurisdiction": { "type": ["string", "null"] },
+        "price": {
+          "description": "The price as asserted by the source. Structural validity (e.g. decimal > 1) is enforced by the admission process, not by this envelope schema, so that malformed-price records can still be represented for REJECTED fixtures."
+        },
+        "price_format": {
+          "type": ["string", "null"],
+          "description": "Controlled vocabulary. A value outside the enum is an INVALID_PRICE_FORMAT condition handled at admission.",
+          "enum": ["decimal", "american", "fractional", null]
+        }
+      }
+    },
+    "canonical": {
+      "type": "object",
+      "description": "LadybugBets canonical identities. Any unresolved identity is null; never guessed, never copied from the raw form.",
+      "additionalProperties": false,
+      "properties": {
+        "sport": { "type": ["string", "null"] },
+        "competition_id": { "type": ["string", "null"] },
+        "competition": { "type": ["string", "null"] },
+        "event_id": { "type": ["string", "null"] },
+        "participants": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "participant_id": { "type": ["string", "null"] },
+              "participant_display_name": { "type": ["string", "null"] },
+              "role": { "type": ["string", "null"] }
+            }
+          }
+        },
+        "operator_id": { "type": ["string", "null"] },
+        "operator_display_name": { "type": ["string", "null"] },
+        "market_id": { "type": ["string", "null"] },
+        "market": { "type": ["string", "null"] },
+        "outcome_id": { "type": ["string", "null"] },
+        "outcome": { "type": ["string", "null"] },
+        "jurisdiction": { "type": ["string", "null"] },
+        "start_time": {
+          "type": ["string", "null"],
+          "description": "Lossless canonical representation of the same instant as source_start_time. Not an independently asserted time."
+        }
+      }
+    },
+    "governance": {
+      "type": "object",
+      "description": "Admission state, reason codes, and correction/supersession metadata.",
+      "additionalProperties": false,
+      "required": ["admission_state"],
+      "properties": {
+        "admission_state": {
+          "type": "string",
+          "enum": ["ADMITTED", "QUARANTINED", "REJECTED"]
+        },
+        "reason_codes": {
+          "type": "array",
+          "description": "Controlled categorical reason codes. Non-empty for QUARANTINED and REJECTED; empty for ADMITTED.",
+          "items": {
+            "type": "string",
+            "enum": [
+              "UNRESOLVED_EVENT_IDENTITY",
+              "AMBIGUOUS_EVENT_IDENTITY",
+              "UNRESOLVED_OPERATOR_IDENTITY",
+              "AMBIGUOUS_OPERATOR_IDENTITY",
+              "UNRESOLVED_MARKET_IDENTITY",
+              "UNRESOLVED_OUTCOME_IDENTITY",
+              "UNRESOLVED_PARTICIPANT_IDENTITY",
+              "MISSING_REQUIRED_SOURCE_FIELD",
+              "INVALID_PRICE",
+              "INVALID_PRICE_FORMAT",
+              "MISSING_PROVIDER_PROVENANCE",
+              "TEMPORAL_AMBIGUITY",
+              "CONFLICTING_SOURCE_ASSERTIONS",
+              "INVALID_CONTRACT_VERSION"
+            ]
+          }
+        },
+        "supersedes_observation_id": {
+          "type": ["string", "null"],
+          "description": "Append-only correction linkage. The superseded observation remains traceable."
+        },
+        "notes": {
+          "type": ["string", "null"],
+          "description": "Optional human-readable governance note. Never a source assertion or a derived value."
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "admission_state": { "const": "ADMITTED" } }
+          },
+          "then": {
+            "properties": {
+              "reason_codes": { "maxItems": 0 }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": { "admission_state": { "const": "QUARANTINED" } }
+          },
+          "then": {
+            "required": ["reason_codes"],
+            "properties": {
+              "reason_codes": { "minItems": 1 }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": { "admission_state": { "const": "REJECTED" } }
+          },
+          "then": {
+            "required": ["reason_codes"],
+            "properties": {
+              "reason_codes": { "minItems": 1 }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

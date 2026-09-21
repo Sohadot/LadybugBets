@@ -1,0 +1,57 @@
+{
+  "contract": {
+    "contract_version": "1.0.0",
+    "observation_id": "lbobs_00000102"
+  },
+  "provenance": {
+    "provider_id": "PRV_BETA",
+    "source_reference": "feed:PRV_BETA/pull/2027-03-20T09:00:00Z#item-140",
+    "source_record_id": "140",
+    "ingested_at": "2027-03-20T09:00:00Z"
+  },
+  "source_asserted": {
+    "source_event_id": "B-EV-9001",
+    "source_event_name": "Cobalt Rovers v Saffron City",
+    "source_sport_label": "Football",
+    "source_competition_id": "APD",
+    "source_competition_label": "Aster Prem",
+    "source_operator_id": "AUR",
+    "source_operator_name": "AuroraSportsbook",
+    "source_market_id": "1x2",
+    "source_market_label": "1X2",
+    "source_outcome_id": "H",
+    "source_outcome_label": "Home Win",
+    "source_participants": [
+      { "source_participant_id": "cob", "source_participant_name": "Cobalt Rovers", "source_role": "home" },
+      { "source_participant_id": "saf", "source_participant_name": "Saffron City", "source_role": "away" }
+    ],
+    "source_start_time": "2027-03-20T20:00:00+00:00",
+    "source_observed_at": "2027-03-20T08:59:30+00:00",
+    "source_jurisdiction": "GB",
+    "price": 1.90,
+    "price_format": "decimal"
+  },
+  "canonical": {
+    "sport": "football",
+    "competition_id": "lbcomp_0001",
+    "competition": "Aster Premier Division",
+    "event_id": null,
+    "participants": [
+      { "participant_id": null, "participant_display_name": null, "role": "home" },
+      { "participant_id": null, "participant_display_name": null, "role": "away" }
+    ],
+    "operator_id": "lbop_0001",
+    "operator_display_name": "Aurora Books",
+    "market_id": "lbmkt_0001",
+    "market": "1X2",
+    "outcome_id": "lboutc_0001",
+    "outcome": "home_win",
+    "jurisdiction": "gb",
+    "start_time": "2027-03-20T20:00:00Z"
+  },
+  "governance": {
+    "admission_state": "QUARANTINED",
+    "reason_codes": ["UNRESOLVED_EVENT_IDENTITY", "UNRESOLVED_PARTICIPANT_IDENTITY"],
+    "notes": "Participants 'Cobalt Rovers' and 'Saffron City' have no active governed participant mappings, so the participant-bearing event identity cannot be resolved. Fail closed: event_id and participant_ids remain null."
+  }
+}
