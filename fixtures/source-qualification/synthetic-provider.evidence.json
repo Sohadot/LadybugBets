@@ -56,6 +56,22 @@
       "notes": null
     },
     {
+      "evidence_id": "syn-multi_operator_coverage",
+      "provider_id": "PRV_SYNTH",
+      "source_url": "https://synthetic-odds.example/docs",
+      "source_title": "Synthetic Provider Docs",
+      "source_type": "API_DOCS",
+      "retrieved_at": "2026-09-21",
+      "source_effective_date": null,
+      "publisher_domain": "synthetic-odds.example",
+      "claim_key": "multi_operator_coverage",
+      "claim_summary": "Synthetic evidence that multi_operator_coverage is available.",
+      "technical_posture": "VERIFIED",
+      "rights_posture": null,
+      "excerpt": null,
+      "notes": null
+    },
+    {
       "evidence_id": "syn-stable_event_identifier",
       "provider_id": "PRV_SYNTH",
       "source_url": "https://synthetic-odds.example/docs",

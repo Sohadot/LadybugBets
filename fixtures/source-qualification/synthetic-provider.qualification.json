@@ -11,6 +11,7 @@
     "football_coverage": "VERIFIED",
     "epl_coverage": "VERIFIED",
     "operator_level_prices": "VERIFIED",
+    "multi_operator_coverage": "VERIFIED",
     "stable_event_identifier": "VERIFIED",
     "operator_identifier_or_stable_label": "VERIFIED",
     "market_identifier_or_stable_key": "VERIFIED",
@@ -35,6 +36,13 @@
     "CURRENT_PRICE_OBSERVATION": {
       "outcome": "QUALIFIED",
       "evidence_ids": [
+        "syn-football_coverage",
+        "syn-epl_coverage",
+        "syn-operator_level_prices",
+        "syn-stable_event_identifier",
+        "syn-operator_identifier_or_stable_label",
+        "syn-market_identifier_or_stable_key",
+        "syn-outcome_identifier_or_stable_key",
         "syn-ingest_use"
       ],
       "notes": null
@@ -42,35 +50,62 @@
     "PUBLIC_SPOTBOARD": {
       "outcome": "QUALIFIED",
       "evidence_ids": [
-        "syn-ingest_use"
+        "syn-football_coverage",
+        "syn-epl_coverage",
+        "syn-operator_level_prices",
+        "syn-stable_event_identifier",
+        "syn-operator_identifier_or_stable_label",
+        "syn-market_identifier_or_stable_key",
+        "syn-outcome_identifier_or_stable_key",
+        "syn-multi_operator_coverage",
+        "syn-ingest_use",
+        "syn-public_display"
       ],
       "notes": null
     },
     "DERIVED_PROBABILITY_DISPLAY": {
       "outcome": "QUALIFIED",
       "evidence_ids": [
-        "syn-ingest_use"
+        "syn-football_coverage",
+        "syn-epl_coverage",
+        "syn-operator_level_prices",
+        "syn-stable_event_identifier",
+        "syn-operator_identifier_or_stable_label",
+        "syn-market_identifier_or_stable_key",
+        "syn-outcome_identifier_or_stable_key",
+        "syn-ingest_use",
+        "syn-derive_calculations",
+        "syn-public_display"
       ],
       "notes": null
     },
     "SOURCE_TIME_MARKET_MOVEMENT": {
       "outcome": "QUALIFIED",
       "evidence_ids": [
-        "syn-ingest_use"
+        "syn-operator_level_prices",
+        "syn-operator_identifier_or_stable_label",
+        "syn-source_observed_timestamp",
+        "syn-stable_event_identifier",
+        "syn-market_identifier_or_stable_key",
+        "syn-outcome_identifier_or_stable_key",
+        "syn-ingest_use",
+        "syn-retain_historical"
       ],
       "notes": null
     },
     "HISTORICAL_DATASET_RETENTION": {
       "outcome": "QUALIFIED",
       "evidence_ids": [
-        "syn-ingest_use"
+        "syn-ingest_use",
+        "syn-retain_historical"
       ],
       "notes": null
     },
     "RAW_DATA_REDISTRIBUTION": {
       "outcome": "QUALIFIED",
       "evidence_ids": [
-        "syn-ingest_use"
+        "syn-ingest_use",
+        "syn-redistribute_raw"
       ],
       "notes": null
     }
@@ -81,6 +116,7 @@
     "syn-football_coverage",
     "syn-epl_coverage",
     "syn-operator_level_prices",
+    "syn-multi_operator_coverage",
     "syn-stable_event_identifier",
     "syn-operator_identifier_or_stable_label",
     "syn-market_identifier_or_stable_key",

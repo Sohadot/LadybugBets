@@ -5,14 +5,18 @@ it validates already-recorded research artifacts (evidence bundles and
 qualification records). It never calls the web, never ingests odds, and never
 generates identity.
 
-Two record kinds:
-- Evidence bundle  (contracts/source-evidence.schema.json)
-- Qualification    (contracts/source-qualification.schema.json)
-
-Central rule: capability outcomes are DETERMINISTICALLY DERIVED from the
-technical and rights matrices (`derive_capabilities`). A committed outcome that
-disagrees with the derived outcome fails validation, so nobody can hand-type
-"QUALIFIED". There is no score, no ranking, and no global winner.
+Central rules:
+- Capability outcomes are DETERMINISTICALLY DERIVED from the technical and rights
+  matrices via a single `CAPABILITY_REQUIREMENTS` table used by both
+  `derive_capabilities` and the capability-evidence-completeness check, so the
+  two cannot drift. A committed outcome that disagrees with the derived outcome
+  fails validation.
+- A qualification record is bound to ONE evidence bundle: provider identity,
+  name, and official domains must match, and every evidence item must carry the
+  same provider_id. Cross-provider evidence cannot satisfy a qualification.
+- A QUALIFIED capability must be machine-traceable to an evidence item for every
+  required VERIFIED technical and ALLOWED right gate.
+- No score, no ranking, no global winner.
 """
 
 from urllib.parse import urlparse
@@ -27,6 +31,7 @@ TECHNICAL_KEYS = (
     "football_coverage",
     "epl_coverage",
     "operator_level_prices",
+    "multi_operator_coverage",
     "stable_event_identifier",
     "operator_identifier_or_stable_label",
     "market_identifier_or_stable_key",
@@ -53,18 +58,76 @@ CAPABILITY_KEYS = (
     "RAW_DATA_REDISTRIBUTION",
 )
 
-# Technicals required to create a governed current Price observation.
-CURRENT_PRICE_TECH = (
-    "football_coverage",
-    "epl_coverage",
-    "operator_level_prices",
-    "stable_event_identifier",
-    "operator_identifier_or_stable_label",
-    "market_identifier_or_stable_key",
-    "outcome_identifier_or_stable_key",
-)
+# Single source of truth for capability gates. `inherits` pulls in another
+# capability's gates (used by derive_capabilities AND evidence completeness).
+# multi_operator_coverage gates PUBLIC_SPOTBOARD only (operator-diverse display),
+# implementing the DEC-013 / LBSQ-001 operator-diversity law. It is deliberately
+# NOT required by CURRENT_PRICE_OBSERVATION (a single-operator source can still
+# produce governed Price observations) nor by SOURCE_TIME_MARKET_MOVEMENT
+# (movement is per one canonical operator over time).
+CAPABILITY_REQUIREMENTS = {
+    "CURRENT_PRICE_OBSERVATION": {
+        "tech": (
+            "football_coverage",
+            "epl_coverage",
+            "operator_level_prices",
+            "stable_event_identifier",
+            "operator_identifier_or_stable_label",
+            "market_identifier_or_stable_key",
+            "outcome_identifier_or_stable_key",
+        ),
+        "rights": ("ingest_use",),
+    },
+    "PUBLIC_SPOTBOARD": {
+        "inherits": "CURRENT_PRICE_OBSERVATION",
+        "tech": ("multi_operator_coverage",),
+        "rights": ("public_display",),
+    },
+    "DERIVED_PROBABILITY_DISPLAY": {
+        "inherits": "CURRENT_PRICE_OBSERVATION",
+        "tech": (),
+        "rights": ("derive_calculations", "public_display"),
+    },
+    "SOURCE_TIME_MARKET_MOVEMENT": {
+        "tech": (
+            "operator_level_prices",
+            "operator_identifier_or_stable_label",
+            "source_observed_timestamp",
+            "stable_event_identifier",
+            "market_identifier_or_stable_key",
+            "outcome_identifier_or_stable_key",
+        ),
+        "rights": ("ingest_use", "retain_historical"),
+    },
+    "HISTORICAL_DATASET_RETENTION": {
+        "tech": (),
+        "rights": ("ingest_use", "retain_historical"),
+    },
+    "RAW_DATA_REDISTRIBUTION": {
+        "tech": (),
+        "rights": ("ingest_use", "redistribute_raw"),
+    },
+}
 
-# Keys that must never appear anywhere in a governance artifact.
+
+def required_gates(capability):
+    """Flatten a capability's technical and rights gate keys (with inheritance)."""
+    spec = CAPABILITY_REQUIREMENTS[capability]
+    tech = []
+    rights = []
+    if "inherits" in spec:
+        base_tech, base_rights = required_gates(spec["inherits"])
+        tech.extend(base_tech)
+        rights.extend(base_rights)
+    for key in spec.get("tech", ()):
+        if key not in tech:
+            tech.append(key)
+    for key in spec.get("rights", ()):
+        if key not in rights:
+            rights.append(key)
+    return tech, rights
+
+
 FORBIDDEN_SCORE_KEYS = frozenset(
     {"score", "scores", "rank", "ranking", "rating", "grade", "winner", "best_provider", "weight"}
 )
@@ -103,14 +166,7 @@ class Finding(object):
 
 
 def _eval(tech_postures, rights_postures):
-    """Tri-state gate: QUALIFIED / NOT_QUALIFIED / UNRESOLVED.
-
-    - NOT_QUALIFIED if any technical is UNSUPPORTED or any right is PROHIBITED
-      (an explicit blocker).
-    - QUALIFIED only if every technical is VERIFIED and every right is ALLOWED.
-    - Otherwise UNRESOLVED (missing/unclear evidence: NOT_VERIFIED, CONFLICTING,
-      or UNKNOWN). Fail closed.
-    """
+    """Tri-state gate: QUALIFIED / NOT_QUALIFIED / UNRESOLVED. Fail closed."""
     if any(t == "UNSUPPORTED" for t in tech_postures) or any(r == "PROHIBITED" for r in rights_postures):
         return "NOT_QUALIFIED"
     if all(t == "VERIFIED" for t in tech_postures) and all(r == "ALLOWED" for r in rights_postures):
@@ -118,62 +174,20 @@ def _eval(tech_postures, rights_postures):
     return "UNRESOLVED"
 
 
-def _dependent(base_outcome, extra_rights):
-    """A capability that additionally requires `base_outcome` == QUALIFIED."""
-    if base_outcome == "NOT_QUALIFIED" or any(r == "PROHIBITED" for r in extra_rights):
-        return "NOT_QUALIFIED"
-    if base_outcome == "QUALIFIED" and all(r == "ALLOWED" for r in extra_rights):
-        return "QUALIFIED"
-    return "UNRESOLVED"
-
-
 def derive_capabilities(qualification_record):
-    """Deterministically derive capability outcomes from the matrices.
-
-    Returns {capability_key: outcome}. Never consults committed outcomes.
-    """
+    """Deterministically derive capability outcomes from the matrices."""
     tech = qualification_record.get("technical_matrix", {})
     rights = qualification_record.get("rights_matrix", {})
-
-    def t(key):
-        return tech.get(key)
-
-    def r(key):
-        return rights.get(key)
-
-    current_price = _eval([t(k) for k in CURRENT_PRICE_TECH], [r("ingest_use")])
-
-    public_spotboard = _dependent(current_price, [r("public_display")])
-    derived_display = _dependent(current_price, [r("derive_calculations"), r("public_display")])
-
-    movement = _eval(
-        [
-            t("operator_level_prices"),
-            t("operator_identifier_or_stable_label"),
-            t("source_observed_timestamp"),
-            t("stable_event_identifier"),
-            t("market_identifier_or_stable_key"),
-            t("outcome_identifier_or_stable_key"),
-        ],
-        [r("ingest_use"), r("retain_historical")],
-    )
-
-    historical_retention = _eval([], [r("ingest_use"), r("retain_historical")])
-    raw_redistribution = _eval([], [r("ingest_use"), r("redistribute_raw")])
-
-    return {
-        "CURRENT_PRICE_OBSERVATION": current_price,
-        "PUBLIC_SPOTBOARD": public_spotboard,
-        "DERIVED_PROBABILITY_DISPLAY": derived_display,
-        "SOURCE_TIME_MARKET_MOVEMENT": movement,
-        "HISTORICAL_DATASET_RETENTION": historical_retention,
-        "RAW_DATA_REDISTRIBUTION": raw_redistribution,
-    }
+    result = {}
+    for cap in CAPABILITY_KEYS:
+        tech_keys, right_keys = required_gates(cap)
+        result[cap] = _eval([tech.get(k) for k in tech_keys], [rights.get(k) for k in right_keys])
+    return result
 
 
 def _host_ok(host, official_domains):
     host = (host or "").lower()
-    if host.endswith(".") :
+    if host.endswith("."):
         host = host[:-1]
     for domain in official_domains:
         d = domain.lower()
@@ -218,6 +232,14 @@ def validate_evidence_bundle(bundle):
     if not isinstance(bundle, dict):
         return [Finding("MALFORMED", "evidence bundle is not an object")]
 
+    provider_id = bundle.get("provider_id")
+    if not provider_id:
+        findings.append(Finding("MISSING_PROVIDER_ID", "bundle.provider_id required"))
+    if not bundle.get("provider_name"):
+        findings.append(Finding("MISSING_PROVIDER_NAME", "bundle.provider_name required"))
+    if not bundle.get("checked_at"):
+        findings.append(Finding("MISSING_CHECKED_AT", "bundle.checked_at required"))
+
     official = bundle.get("official_domains")
     if not isinstance(official, list) or not official:
         findings.append(Finding("MISSING_OFFICIAL_DOMAINS", "official_domains required"))
@@ -241,6 +263,11 @@ def validate_evidence_bundle(bundle):
         else:
             seen_ids.add(eid)
 
+        if provider_id and item.get("provider_id") != provider_id:
+            findings.append(
+                Finding("EVIDENCE_PROVIDER_MISMATCH", "evidence %r provider_id != bundle provider_id" % eid)
+            )
+
         url = item.get("source_url", "")
         if not isinstance(url, str) or not url.startswith("https://"):
             findings.append(Finding("EVIDENCE_URL_NOT_HTTPS", "evidence %r url not HTTPS: %r" % (eid, url)))
@@ -250,13 +277,16 @@ def validate_evidence_bundle(bundle):
                 findings.append(
                     Finding("EVIDENCE_DOMAIN_MISMATCH", "evidence %r host %r not in official_domains" % (eid, host))
                 )
-        publisher = item.get("publisher_domain")
-        if not _host_ok(publisher, official):
+        if not _host_ok(item.get("publisher_domain"), official):
             findings.append(
-                Finding("EVIDENCE_PUBLISHER_MISMATCH", "evidence %r publisher %r not official" % (eid, publisher))
+                Finding("EVIDENCE_PUBLISHER_MISMATCH", "evidence %r publisher not official" % eid)
             )
         if not item.get("retrieved_at"):
             findings.append(Finding("MISSING_RETRIEVED_AT", "evidence %r missing retrieved_at" % eid))
+        if not item.get("claim_key"):
+            findings.append(Finding("MISSING_CLAIM_KEY", "evidence %r missing claim_key" % eid))
+        if not item.get("claim_summary"):
+            findings.append(Finding("MISSING_CLAIM_SUMMARY", "evidence %r missing claim_summary" % eid))
         st = item.get("source_type")
         if st not in SOURCE_TYPES:
             findings.append(Finding("BAD_SOURCE_TYPE", "evidence %r bad source_type %r" % (eid, st)))
@@ -272,7 +302,6 @@ def validate_evidence_bundle(bundle):
 
 
 def _evidence_index(bundle):
-    """Map evidence_id -> item (for a validated-or-not bundle)."""
     index = {}
     for item in (bundle.get("evidence_items") or []):
         if isinstance(item, dict) and item.get("evidence_id"):
@@ -281,21 +310,29 @@ def _evidence_index(bundle):
 
 
 def validate_qualification(record, bundle):
-    """Validate one qualification record against its evidence bundle."""
+    """Validate one qualification record against its bound evidence bundle."""
     findings = []
     if not isinstance(record, dict):
         return [Finding("MALFORMED", "qualification is not an object")]
+    if not isinstance(bundle, dict):
+        return [Finding("MALFORMED", "bundle is not an object")]
 
-    index = _evidence_index(bundle) if isinstance(bundle, dict) else {}
+    index = _evidence_index(bundle)
 
-    # Referenced evidence ids must resolve in the bundle.
+    # --- Provider/bundle binding --------------------------------------------
+    if record.get("provider_id") != bundle.get("provider_id"):
+        findings.append(Finding("PROVIDER_ID_MISMATCH", "qualification.provider_id != bundle.provider_id"))
+    if record.get("provider_name") != bundle.get("provider_name"):
+        findings.append(Finding("PROVIDER_NAME_MISMATCH", "qualification.provider_name != bundle.provider_name"))
+    if set(record.get("official_domains") or []) != set(bundle.get("official_domains") or []):
+        findings.append(Finding("OFFICIAL_DOMAIN_SET_MISMATCH", "official_domains differ from bundle"))
+
     for eid in (record.get("evidence_ids") or []):
         if eid not in index:
             findings.append(Finding("UNRESOLVED_EVIDENCE_REFERENCE", "evidence_id %r not in bundle" % eid))
 
     tech = record.get("technical_matrix", {})
     rights = record.get("rights_matrix", {})
-
     for key in TECHNICAL_KEYS:
         if tech.get(key) not in TECHNICAL_POSTURES:
             findings.append(Finding("BAD_TECHNICAL_POSTURE", "technical_matrix.%s = %r" % (key, tech.get(key))))
@@ -305,34 +342,26 @@ def validate_qualification(record, bundle):
     if record.get("pricing_access") not in PRICING_ACCESS:
         findings.append(Finding("BAD_PRICING_ACCESS", "pricing_access = %r" % record.get("pricing_access")))
 
-    # Evidence-backing: an ALLOWED/PROHIBITED right, or a VERIFIED/UNSUPPORTED/
-    # CONFLICTING technical, must be backed by a referenced evidence item whose
-    # claim_key matches and whose posture matches.
     referenced = set(record.get("evidence_ids") or [])
 
-    def _has_backing(claim_key, field, posture_value):
-        for eid in referenced:
+    def _backed_by(claim_key, field, posture_value, pool):
+        for eid in pool:
             item = index.get(eid)
-            if not item:
-                continue
-            if item.get("claim_key") == claim_key and item.get(field) == posture_value:
+            if item and item.get("claim_key") == claim_key and item.get(field) == posture_value:
                 return True
         return False
 
+    # Matrix-level evidence backing (record-wide pool).
     for key in RIGHTS_KEYS:
         posture = rights.get(key)
-        if posture in ("ALLOWED", "PROHIBITED") and not _has_backing(key, "rights_posture", posture):
-            findings.append(
-                Finding("RIGHT_WITHOUT_EVIDENCE", "rights_matrix.%s=%s lacks matching referenced evidence" % (key, posture))
-            )
+        if posture in ("ALLOWED", "PROHIBITED") and not _backed_by(key, "rights_posture", posture, referenced):
+            findings.append(Finding("RIGHT_WITHOUT_EVIDENCE", "rights_matrix.%s=%s lacks referenced evidence" % (key, posture)))
     for key in TECHNICAL_KEYS:
         posture = tech.get(key)
-        if posture in ("VERIFIED", "UNSUPPORTED", "CONFLICTING") and not _has_backing(key, "technical_posture", posture):
-            findings.append(
-                Finding("TECHNICAL_WITHOUT_EVIDENCE", "technical_matrix.%s=%s lacks matching referenced evidence" % (key, posture))
-            )
+        if posture in ("VERIFIED", "UNSUPPORTED", "CONFLICTING") and not _backed_by(key, "technical_posture", posture, referenced):
+            findings.append(Finding("TECHNICAL_WITHOUT_EVIDENCE", "technical_matrix.%s=%s lacks referenced evidence" % (key, posture)))
 
-    # Capability outcomes must equal the deterministically derived outcomes.
+    # --- Capability derivation + per-capability evidence completeness --------
     derived = derive_capabilities(record)
     committed = record.get("capabilities", {})
     for cap in CAPABILITY_KEYS:
@@ -342,26 +371,21 @@ def validate_qualification(record, bundle):
             continue
         if cap_record["outcome"] != derived[cap]:
             findings.append(
-                Finding(
-                    "CAPABILITY_DERIVATION_MISMATCH",
-                    "%s committed %s but derived %s" % (cap, cap_record["outcome"], derived[cap]),
-                )
+                Finding("CAPABILITY_DERIVATION_MISMATCH", "%s committed %s but derived %s" % (cap, cap_record["outcome"], derived[cap]))
             )
-        for eid in (cap_record.get("evidence_ids") or []):
+        cap_pool = set(cap_record.get("evidence_ids") or [])
+        for eid in cap_pool:
             if eid not in index:
-                findings.append(
-                    Finding("UNRESOLVED_EVIDENCE_REFERENCE", "%s references missing evidence %r" % (cap, eid))
-                )
-
-    # Hard capability guards (belt-and-braces; the derivation already enforces).
-    if committed.get("PUBLIC_SPOTBOARD", {}).get("outcome") == "QUALIFIED" and rights.get("public_display") != "ALLOWED":
-        findings.append(Finding("PUBLIC_SPOTBOARD_WITHOUT_DISPLAY", "PUBLIC_SPOTBOARD QUALIFIED needs public_display ALLOWED"))
-    if committed.get("HISTORICAL_DATASET_RETENTION", {}).get("outcome") == "QUALIFIED" and rights.get("retain_historical") != "ALLOWED":
-        findings.append(Finding("RETENTION_WITHOUT_RIGHT", "HISTORICAL_DATASET_RETENTION QUALIFIED needs retain_historical ALLOWED"))
-    if committed.get("DERIVED_PROBABILITY_DISPLAY", {}).get("outcome") == "QUALIFIED" and rights.get("derive_calculations") != "ALLOWED":
-        findings.append(Finding("DERIVED_WITHOUT_RIGHT", "DERIVED_PROBABILITY_DISPLAY QUALIFIED needs derive_calculations ALLOWED"))
-    if committed.get("SOURCE_TIME_MARKET_MOVEMENT", {}).get("outcome") == "QUALIFIED" and tech.get("source_observed_timestamp") != "VERIFIED":
-        findings.append(Finding("MOVEMENT_WITHOUT_SOURCE_TIME", "SOURCE_TIME_MARKET_MOVEMENT QUALIFIED needs source_observed_timestamp VERIFIED"))
+                findings.append(Finding("UNRESOLVED_EVIDENCE_REFERENCE", "%s references missing evidence %r" % (cap, eid)))
+        # A QUALIFIED capability must trace to evidence for every required gate.
+        if cap_record["outcome"] == "QUALIFIED":
+            tech_keys, right_keys = required_gates(cap)
+            for gate in tech_keys:
+                if not _backed_by(gate, "technical_posture", "VERIFIED", cap_pool):
+                    findings.append(Finding("CAPABILITY_EVIDENCE_INCOMPLETE", "%s missing VERIFIED evidence for %s" % (cap, gate)))
+            for gate in right_keys:
+                if not _backed_by(gate, "rights_posture", "ALLOWED", cap_pool):
+                    findings.append(Finding("CAPABILITY_EVIDENCE_INCOMPLETE", "%s missing ALLOWED evidence for %s" % (cap, gate)))
 
     findings.extend(_hygiene_findings(record, "qualification"))
     return findings

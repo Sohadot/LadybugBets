@@ -82,6 +82,18 @@ class DerivationTests(unittest.TestCase):
         d = self._derive_with(historical_odds_access="VERIFIED", retain_historical="UNKNOWN")
         self.assertEqual(d["HISTORICAL_DATASET_RETENTION"], "UNRESOLVED")
 
+    def test_single_operator_can_qualify_cpo(self):
+        d = self._derive_with(multi_operator_coverage="UNSUPPORTED")
+        self.assertEqual(d["CURRENT_PRICE_OBSERVATION"], "QUALIFIED")
+
+    def test_single_operator_cannot_qualify_spotboard(self):
+        d = self._derive_with(multi_operator_coverage="UNSUPPORTED")
+        self.assertEqual(d["PUBLIC_SPOTBOARD"], "NOT_QUALIFIED")
+
+    def test_multi_operator_verified_spotboard_qualified(self):
+        d = self._derive_with(multi_operator_coverage="VERIFIED", public_display="ALLOWED")
+        self.assertEqual(d["PUBLIC_SPOTBOARD"], "QUALIFIED")
+
     def test_7_notverified_source_time_blocks_movement(self):
         self.assertEqual(self._derive_with(source_observed_timestamp="NOT_VERIFIED")["SOURCE_TIME_MARKET_MOVEMENT"], "UNRESOLVED")
 
@@ -196,6 +208,80 @@ class RealProviderTests(unittest.TestCase):
         # The four providers are not all identical -> qualification is per-provider.
         distinct = {tuple(sorted(o.items())) for o in outcomes_by_provider.values()}
         self.assertGreater(len(distinct), 1)
+
+
+class ProviderBindingTests(unittest.TestCase):
+    def test_provider_id_mismatch_fails(self):
+        bundle, qual = _synth()
+        qual["provider_id"] = "PRV_OTHER"
+        self.assertIn("PROVIDER_ID_MISMATCH", _codes(vq.validate_qualification(qual, bundle)))
+
+    def test_provider_name_mismatch_fails(self):
+        bundle, qual = _synth()
+        qual["provider_name"] = "Other Provider"
+        self.assertIn("PROVIDER_NAME_MISMATCH", _codes(vq.validate_qualification(qual, bundle)))
+
+    def test_evidence_provider_mismatch_fails(self):
+        bundle, _ = _synth()
+        bundle["evidence_items"][0]["provider_id"] = "PRV_OTHER"
+        self.assertIn("EVIDENCE_PROVIDER_MISMATCH", _codes(vq.validate_evidence_bundle(bundle)))
+
+    def test_official_domain_set_mismatch_fails(self):
+        bundle, qual = _synth()
+        qual["official_domains"] = ["different.example"]
+        self.assertIn("OFFICIAL_DOMAIN_SET_MISMATCH", _codes(vq.validate_qualification(qual, bundle)))
+
+
+class CapabilityEvidenceCompletenessTests(unittest.TestCase):
+    def test_qualified_cpo_missing_gate_evidence_fails(self):
+        bundle, qual = _synth()
+        cpo = qual["capabilities"]["CURRENT_PRICE_OBSERVATION"]["evidence_ids"]
+        cpo.remove("syn-epl_coverage")  # drop a required VERIFIED gate
+        self.assertIn("CAPABILITY_EVIDENCE_INCOMPLETE", _codes(vq.validate_qualification(qual, bundle)))
+
+    def test_qualified_spotboard_missing_inherited_cpo_evidence_fails(self):
+        bundle, qual = _synth()
+        psb = qual["capabilities"]["PUBLIC_SPOTBOARD"]["evidence_ids"]
+        psb.remove("syn-operator_level_prices")  # inherited CPO gate
+        self.assertIn("CAPABILITY_EVIDENCE_INCOMPLETE", _codes(vq.validate_qualification(qual, bundle)))
+
+    def test_capability_evidence_wrong_claim_key_fails(self):
+        bundle, qual = _synth()
+        ids = qual["capabilities"]["CURRENT_PRICE_OBSERVATION"]["evidence_ids"]
+        ids[ids.index("syn-epl_coverage")] = "syn-cache"  # resolves but wrong claim_key
+        self.assertIn("CAPABILITY_EVIDENCE_INCOMPLETE", _codes(vq.validate_qualification(qual, bundle)))
+
+    def test_capability_evidence_wrong_posture_fails(self):
+        bundle, qual = _synth()
+        # Add a same-claim item with a non-VERIFIED posture and reference it
+        # instead of the VERIFIED one for the epl gate.
+        bundle["evidence_items"].append({
+            "evidence_id": "syn-epl_coverage-weak", "provider_id": "PRV_SYNTH",
+            "source_url": "https://synthetic-odds.example/docs", "source_title": "Docs",
+            "source_type": "API_DOCS", "retrieved_at": "2026-09-21", "source_effective_date": None,
+            "publisher_domain": "synthetic-odds.example", "claim_key": "epl_coverage",
+            "claim_summary": "weak", "technical_posture": "NOT_VERIFIED", "rights_posture": None,
+            "excerpt": None, "notes": None,
+        })
+        ids = qual["capabilities"]["CURRENT_PRICE_OBSERVATION"]["evidence_ids"]
+        ids[ids.index("syn-epl_coverage")] = "syn-epl_coverage-weak"
+        self.assertIn("CAPABILITY_EVIDENCE_INCOMPLETE", _codes(vq.validate_qualification(qual, bundle)))
+
+
+class SportmonksRedistributionTests(unittest.TestCase):
+    def test_broad_raw_redistribution_not_prohibited_from_resale_only(self):
+        bundle = _load(os.path.join(EVID, "sportmonks.evidence.json"))
+        qual = _load(os.path.join(EVID, "sportmonks.qualification.json"))
+        self.assertEqual(qual["rights_matrix"]["redistribute_raw"], "UNKNOWN")
+        self.assertEqual(qual["capabilities"]["RAW_DATA_REDISTRIBUTION"]["outcome"], "UNRESOLVED")
+        self.assertEqual(vq.validate_qualification(qual, bundle), [])
+
+
+class BetfairSingleOperatorTests(unittest.TestCase):
+    def test_single_operator_spotboard_not_qualified(self):
+        qual = _load(os.path.join(EVID, "betfair-exchange.qualification.json"))
+        self.assertEqual(qual["technical_matrix"]["multi_operator_coverage"], "UNSUPPORTED")
+        self.assertEqual(qual["capabilities"]["PUBLIC_SPOTBOARD"]["outcome"], "NOT_QUALIFIED")
 
 
 if __name__ == "__main__":  # pragma: no cover

@@ -88,8 +88,10 @@ Required VERIFIED: `football_coverage`, `epl_coverage`, `operator_level_prices`,
 Required ALLOWED: `ingest_use`. (Public display is evaluated separately.)
 
 ### B. PUBLIC_SPOTBOARD
-Requires **A = QUALIFIED** and `public_display = ALLOWED`. If `public_display`
-is UNKNOWN → UNRESOLVED (fail closed).
+Requires **A = QUALIFIED**, `public_display = ALLOWED`, and
+`multi_operator_coverage = VERIFIED` (operator diversity, below). If
+`public_display` is UNKNOWN → UNRESOLVED (fail closed); if
+`multi_operator_coverage` is UNSUPPORTED → NOT_QUALIFIED.
 
 ### C. DERIVED_PROBABILITY_DISPLAY
 Requires **A = QUALIFIED**, `derive_calculations = ALLOWED`, and
@@ -113,6 +115,26 @@ Requires `redistribute_raw` and `ingest_use` **ALLOWED**. **Not required for the
 consumer MVP**; a provider may be excellent for LadybugBets while raw
 redistribution is PROHIBITED, and that is not an automatic disqualification.
 
+## Operator diversity gate (`multi_operator_coverage`)
+
+`multi_operator_coverage` is a technical posture (VERIFIED / NOT_VERIFIED /
+UNSUPPORTED / CONFLICTING) that machine-encodes the DEC-013 operator-diversity
+law — it is an **implementation** of DEC-013 + LBSQ-001, not a new decision.
+
+- **VERIFIED** — official evidence establishes multiple distinct quoted
+  operators/bookmakers.
+- **UNSUPPORTED** — official evidence establishes that the source exposes only
+  **one** quoted operator (e.g. a single exchange).
+- **NOT_VERIFIED** — research did not establish either state.
+
+This is **not** provider diversity; provider identity remains distinct from
+operator identity. `CURRENT_PRICE_OBSERVATION` does **not** require it (a
+single-operator source can still produce governed Price observations), and
+`SOURCE_TIME_MARKET_MOVEMENT` does **not** require it (movement is computed per
+one canonical operator over time). `PUBLIC_SPOTBOARD` (and any future
+multi-operator Consensus capability) **does** require
+`multi_operator_coverage = VERIFIED`.
+
 ## Deterministic derivation (no hand-typed verdicts)
 
 Capability outcomes are **computed** from the technical and rights matrices by
@@ -127,8 +149,26 @@ carry **no weights and no score**.
 
 Every VERIFIED/UNSUPPORTED/CONFLICTING technical and every ALLOWED/PROHIBITED
 right must be backed by a referenced evidence item whose `claim_key` and posture
-match. Each capability record references the evidence ids for its gates. UNKNOWN
-and NOT_VERIFIED need no evidence — they are the absence of establishment.
+match. UNKNOWN and NOT_VERIFIED need no evidence — they are the absence of
+establishment.
+
+A capability committed **QUALIFIED** must be machine-traceable to an evidence
+item for **every** required gate: for each required VERIFIED technical and each
+required ALLOWED right (including inherited gates), the capability's
+`evidence_ids` must include an item with the matching `claim_key` and posture, or
+validation fails (`CAPABILITY_EVIDENCE_INCOMPLETE`). NOT_QUALIFIED / UNRESOLVED
+capabilities may reference only the evidence relevant to their blocker/unresolved
+condition. The capability gate map lives in one place
+(`CAPABILITY_REQUIREMENTS`) and drives both derivation and completeness so the
+two cannot diverge.
+
+## Provider/bundle binding
+
+A qualification record is bound to exactly one evidence bundle: `provider_id`,
+`provider_name`, and `official_domains` must match the bundle, and every evidence
+item must carry the same `provider_id`. Evidence from another governed provider
+identity can never satisfy a qualification, even if `claim_key` and posture
+match.
 
 ## Timestamp qualification
 

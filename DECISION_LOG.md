@@ -53,6 +53,9 @@ foundations.
 - **Sprint 2 open provider questions** (per-provider `unresolved_questions` in
   `evidence/source-qualification/*.qualification.json`) remain open and require
   primary-source or licence review before any production use.
+- The Sprint 2 `multi_operator_coverage` qualification gate (required for
+  PUBLIC_SPOTBOARD) is an **implementation** of DEC-013 (provider diversity ≠
+  operator diversity) within LBSQ-001/DEC-025; it is **not** a new decision.
 - **Sprint 1 deferrals within LBIR-001 / conflict governance:** provider
   precedence between disagreeing providers, and any timing tolerance for event
   merge, are **not** ratified and await later evidence. The `observation_id`
