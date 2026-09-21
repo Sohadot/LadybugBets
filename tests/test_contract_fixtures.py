@@ -184,13 +184,14 @@ class FixtureConsistencyTests(unittest.TestCase):
                     "%s must carry a reason code" % path,
                 )
 
-    def test_intended_rejection_reasons_present(self):
-        """The specific representable-rejection fixtures carry their intended reason."""
+    def test_intended_rejection_reasons_present_and_evidence_backed(self):
+        """Each machine-detectable rejected fixture (A) declares its intended
+        reason and (B) the validator independently detects that defect."""
         expected = {
+            "01_invalid_price.json": "INVALID_PRICE",
             "02_missing_provider_provenance.json": "MISSING_PROVIDER_PROVENANCE",
             "03_unsupported_contract_version.json": "INVALID_CONTRACT_VERSION",
             "04_invalid_price_format.json": "INVALID_PRICE_FORMAT",
-            "01_invalid_price.json": "INVALID_PRICE",
         }
         seen = {}
         for sub, path, data in _iter_observation_files():
@@ -198,10 +199,18 @@ class FixtureConsistencyTests(unittest.TestCase):
                 continue
             name = os.path.basename(path)
             if name in expected:
-                seen[name] = data["governance"].get("reason_codes", [])
+                seen[name] = data
         for name, code in expected.items():
             self.assertIn(name, seen, "missing rejected fixture %s" % name)
-            self.assertIn(code, seen[name], "%s should carry %s" % (name, code))
+            data = seen[name]
+            # (A) declared reason present
+            self.assertIn(code, data["governance"].get("reason_codes", []), "%s reason" % name)
+            # (B) validator independently detects the defect
+            self.assertIn(
+                code,
+                gov.detect_machine_conditions(data),
+                "%s defect not independently detected" % name,
+            )
 
 
 class IdentityMappingTests(unittest.TestCase):
