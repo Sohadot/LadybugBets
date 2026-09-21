@@ -1,0 +1,159 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ladybugbets.example/contracts/source-qualification.schema.json",
+  "title": "Source Qualification Record",
+  "description": "Evidence-backed, capability-specific qualification of a data provider. No numerical score, no ranking, no global winner. Capability outcomes are deterministically derivable from the technical and rights matrices (see governance/validate_source_qualification.py and LBSQ-001).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "qualification_version",
+    "provider_id",
+    "provider_name",
+    "checked_at",
+    "evidence_bundle",
+    "official_domains",
+    "technical_matrix",
+    "rights_matrix",
+    "pricing_access",
+    "capabilities",
+    "blockers",
+    "unresolved_questions",
+    "evidence_ids"
+  ],
+  "$defs": {
+    "technical_posture": {
+      "type": "string",
+      "enum": ["VERIFIED", "NOT_VERIFIED", "UNSUPPORTED", "CONFLICTING"]
+    },
+    "rights_posture": {
+      "type": "string",
+      "enum": ["ALLOWED", "PROHIBITED", "UNKNOWN"]
+    },
+    "capability_outcome": {
+      "type": "string",
+      "enum": ["QUALIFIED", "NOT_QUALIFIED", "UNRESOLVED"]
+    },
+    "capability_record": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["outcome", "evidence_ids"],
+      "properties": {
+        "outcome": { "$ref": "#/$defs/capability_outcome" },
+        "evidence_ids": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "notes": { "type": ["string", "null"] }
+      }
+    }
+  },
+  "properties": {
+    "qualification_version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+    },
+    "provider_id": { "type": "string", "minLength": 1 },
+    "provider_name": { "type": "string", "minLength": 1 },
+    "checked_at": { "type": "string", "format": "date" },
+    "evidence_bundle": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Reference to the evidence bundle file backing this record (repo-relative path)."
+    },
+    "official_domains": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "technical_matrix": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "football_coverage",
+        "epl_coverage",
+        "operator_level_prices",
+        "stable_event_identifier",
+        "operator_identifier_or_stable_label",
+        "market_identifier_or_stable_key",
+        "outcome_identifier_or_stable_key",
+        "source_observed_timestamp",
+        "historical_odds_access",
+        "documented_rate_limits"
+      ],
+      "properties": {
+        "football_coverage": { "$ref": "#/$defs/technical_posture" },
+        "epl_coverage": { "$ref": "#/$defs/technical_posture" },
+        "operator_level_prices": { "$ref": "#/$defs/technical_posture" },
+        "stable_event_identifier": { "$ref": "#/$defs/technical_posture" },
+        "operator_identifier_or_stable_label": { "$ref": "#/$defs/technical_posture" },
+        "market_identifier_or_stable_key": { "$ref": "#/$defs/technical_posture" },
+        "outcome_identifier_or_stable_key": { "$ref": "#/$defs/technical_posture" },
+        "source_observed_timestamp": { "$ref": "#/$defs/technical_posture" },
+        "historical_odds_access": { "$ref": "#/$defs/technical_posture" },
+        "documented_rate_limits": { "$ref": "#/$defs/technical_posture" }
+      }
+    },
+    "rights_matrix": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "ingest_use",
+        "cache",
+        "retain_historical",
+        "derive_calculations",
+        "public_display",
+        "redistribute_raw",
+        "redistribute_derived"
+      ],
+      "properties": {
+        "ingest_use": { "$ref": "#/$defs/rights_posture" },
+        "cache": { "$ref": "#/$defs/rights_posture" },
+        "retain_historical": { "$ref": "#/$defs/rights_posture" },
+        "derive_calculations": { "$ref": "#/$defs/rights_posture" },
+        "public_display": { "$ref": "#/$defs/rights_posture" },
+        "redistribute_raw": { "$ref": "#/$defs/rights_posture" },
+        "redistribute_derived": { "$ref": "#/$defs/rights_posture" }
+      }
+    },
+    "attribution_requirement": { "type": ["string", "null"] },
+    "geographic_restrictions": { "type": ["string", "null"] },
+    "pricing_access": {
+      "type": "string",
+      "enum": ["PUBLIC_PLAN", "CONTACT_SALES", "UNKNOWN"],
+      "description": "Public pricing posture only. No private/numeric pricing is stored."
+    },
+    "capabilities": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "CURRENT_PRICE_OBSERVATION",
+        "PUBLIC_SPOTBOARD",
+        "DERIVED_PROBABILITY_DISPLAY",
+        "SOURCE_TIME_MARKET_MOVEMENT",
+        "HISTORICAL_DATASET_RETENTION",
+        "RAW_DATA_REDISTRIBUTION"
+      ],
+      "properties": {
+        "CURRENT_PRICE_OBSERVATION": { "$ref": "#/$defs/capability_record" },
+        "PUBLIC_SPOTBOARD": { "$ref": "#/$defs/capability_record" },
+        "DERIVED_PROBABILITY_DISPLAY": { "$ref": "#/$defs/capability_record" },
+        "SOURCE_TIME_MARKET_MOVEMENT": { "$ref": "#/$defs/capability_record" },
+        "HISTORICAL_DATASET_RETENTION": { "$ref": "#/$defs/capability_record" },
+        "RAW_DATA_REDISTRIBUTION": { "$ref": "#/$defs/capability_record" }
+      }
+    },
+    "blockers": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "unresolved_questions": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "evidence_ids": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "description": "All evidence ids referenced by this qualification; each must resolve in the evidence bundle."
+    }
+  }
+}

@@ -1,0 +1,107 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ladybugbets.example/contracts/source-evidence.schema.json",
+  "title": "Source Evidence Bundle",
+  "description": "A public-safe bundle of official primary-source evidence used to qualify a data provider. Records WHAT official documentation supports each claim. No secrets, credentials, private pricing, or full Terms text. See docs/SOURCE_EVIDENCE_POLICY.md (part of LBSQ-001).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["evidence_version", "provider_id", "provider_name", "official_domains", "checked_at", "evidence_items"],
+  "$defs": {
+    "technical_posture": {
+      "type": "string",
+      "enum": ["VERIFIED", "NOT_VERIFIED", "UNSUPPORTED", "CONFLICTING"]
+    },
+    "rights_posture": {
+      "type": "string",
+      "enum": ["ALLOWED", "PROHIBITED", "UNKNOWN"]
+    },
+    "source_type": {
+      "type": "string",
+      "enum": ["TERMS", "LEGAL", "API_DOCS", "PRODUCT_DOCS", "COVERAGE", "PRICING", "FAQ", "SUPPORT"]
+    }
+  },
+  "properties": {
+    "evidence_version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$",
+      "description": "Version of this evidence-bundle contract."
+    },
+    "provider_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Governed LadybugBets identity of the provider (raw provider identity; not a canonical sporting id)."
+    },
+    "provider_name": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Public-safe real provider name."
+    },
+    "official_domains": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string", "minLength": 1 },
+      "description": "The provider's official domains. Every evidence source_url must belong to one of these."
+    },
+    "checked_at": {
+      "type": "string",
+      "format": "date",
+      "description": "Date this bundle was assembled/reviewed."
+    },
+    "evidence_items": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["evidence_id", "provider_id", "source_url", "source_title", "source_type", "retrieved_at", "publisher_domain", "claim_key", "claim_summary"],
+        "properties": {
+          "evidence_id": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Unique id within the bundle (e.g. 'oddsapi-terms-display')."
+          },
+          "provider_id": { "type": "string", "minLength": 1 },
+          "source_url": {
+            "type": "string",
+            "pattern": "^https://",
+            "description": "Exact official URL (must be HTTPS and on an official domain)."
+          },
+          "source_title": { "type": "string", "minLength": 1 },
+          "source_type": { "$ref": "#/$defs/source_type" },
+          "retrieved_at": {
+            "type": "string",
+            "format": "date",
+            "description": "Date the source was retrieved."
+          },
+          "source_effective_date": {
+            "type": ["string", "null"],
+            "description": "Effective / last-updated / revision date stated on the source page, when available; else null. Free text to preserve the source's own wording."
+          },
+          "publisher_domain": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Domain that published the source; must be one of official_domains."
+          },
+          "claim_key": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Stable key naming the claim this evidence supports (e.g. 'public_display', 'source_observed_timestamp')."
+          },
+          "claim_summary": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Concise paraphrase. NOT a copy of the full Terms."
+          },
+          "technical_posture": { "anyOf": [{ "$ref": "#/$defs/technical_posture" }, { "type": "null" }] },
+          "rights_posture": { "anyOf": [{ "$ref": "#/$defs/rights_posture" }, { "type": "null" }] },
+          "excerpt": {
+            "type": ["string", "null"],
+            "maxLength": 500,
+            "description": "Optional minimal verbatim excerpt (kept short). Never the full document."
+          },
+          "notes": { "type": ["string", "null"] }
+        }
+      }
+    }
+  }
+}
