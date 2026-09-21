@@ -1,0 +1,13 @@
+{
+  "mapping_version": "1.0.0",
+  "mapping_id": "lbmap_op_0009",
+  "provider_id": "PRV_ALPHA",
+  "entity_type": "operator",
+  "source_native_id": "op-ZZZ",
+  "source_label": "Unlisted Book 9",
+  "canonical_id": "lbop_0009",
+  "status": "proposed",
+  "created_at": "2027-03-14T15:01:05Z",
+  "decision_basis": "manual_review",
+  "evidence_reference": "governance/review/queue#op-ZZZ"
+}

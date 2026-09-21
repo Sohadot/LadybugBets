@@ -1,0 +1,56 @@
+{
+  "contract": {
+    "contract_version": "1.0.0",
+    "observation_id": "lbobs_00000004"
+  },
+  "provenance": {
+    "provider_id": "PRV_BETA",
+    "source_reference": "feed:PRV_BETA/pull/2027-03-14T14:59:05Z#item-88",
+    "source_record_id": "88",
+    "ingested_at": "2027-03-14T14:59:05Z"
+  },
+  "source_asserted": {
+    "source_event_id": "B-EV-7788",
+    "source_event_name": "Violet vs Marigold",
+    "source_sport_label": "Football",
+    "source_competition_id": "APD",
+    "source_competition_label": "Aster Prem",
+    "source_operator_id": "AUR",
+    "source_operator_name": "AuroraSportsbook",
+    "source_market_id": "1x2",
+    "source_market_label": "1X2",
+    "source_outcome_id": "H",
+    "source_outcome_label": "Home Win",
+    "source_participants": [
+      { "source_participant_id": "vio", "source_participant_name": "Violet", "source_role": "home" },
+      { "source_participant_id": "mar", "source_participant_name": "Marigold Utd", "source_role": "away" }
+    ],
+    "source_start_time": "2027-03-14T16:00:00+01:00",
+    "source_observed_at": "2027-03-14T14:59:03+00:00",
+    "source_jurisdiction": "GB",
+    "price": 2.11,
+    "price_format": "decimal"
+  },
+  "canonical": {
+    "sport": "football",
+    "competition_id": "lbcomp_0001",
+    "competition": "Aster Premier Division",
+    "event_id": "lbev_000001",
+    "participants": [
+      { "participant_id": "lbteam_0001", "participant_display_name": "Violet FC", "role": "home" },
+      { "participant_id": "lbteam_0002", "participant_display_name": "Marigold United", "role": "away" }
+    ],
+    "operator_id": "lbop_0001",
+    "operator_display_name": "Aurora Books",
+    "market_id": "lbmkt_0001",
+    "market": "1X2",
+    "outcome_id": "lboutc_0001",
+    "outcome": "home_win",
+    "jurisdiction": "gb",
+    "start_time": "2027-03-14T15:00:00Z"
+  },
+  "governance": {
+    "admission_state": "ADMITTED",
+    "reason_codes": []
+  }
+}

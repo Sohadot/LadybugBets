@@ -242,6 +242,54 @@ If jurisdiction is both supplied by a source and normalized by LadybugBets, the
 two forms are kept distinct. Jurisdiction-resolution rules are **not defined in
 Sprint 0**.
 
+## Participant identity (Sprint 1 extension)
+
+Sprint 0 did not model participants explicitly. Sprint 1 extends the conceptual
+model because governed **event** identity cannot be robustly resolved without
+participants (see [OBSERVATION_CONTRACT.md](OBSERVATION_CONTRACT.md) and DEC-017).
+Participants follow the same raw ≠ canonical law as every other entity.
+
+**Source participants** (source-asserted):
+
+| Field | Dimension | Meaning |
+| --- | --- | --- |
+| `source_participant_id` | Source-asserted | Participant identifier as supplied by the provider, when available. |
+| `source_participant_name` | Source-asserted | Participant label as supplied. |
+| `source_role` | Source-asserted | Role label as supplied. |
+
+**Canonical participants** (canonical/normalized):
+
+| Field | Dimension | Meaning |
+| --- | --- | --- |
+| `participant_id` | Canonical/normalized | LadybugBets canonical participant identity. |
+| `participant_display_name` | Canonical/normalized | Governed display label. |
+| `role` | Canonical/normalized | Canonical role. |
+
+For the initial football scope, roles are `home` and `away`. The model is written
+so that additional role-bearing participants can be added later without rewriting
+it. **No teams database is built and no real team registry is populated in
+Sprint 1**; participants used anywhere in the repository are synthetic.
+
+## Sprint 1 governance (extensions)
+
+The Sprint 0 "deferred to Sprint 1" items above (the operator/event resolution
+algorithm, fuzzy-matching prohibition, and precedence questions) are now governed
+by the Sprint 1 contracts, which build directly on this model without changing
+it:
+
+- [OBSERVATION_CONTRACT.md](OBSERVATION_CONTRACT.md) — **LBOC-001**, the full
+  governed observation envelope and three-state admission model.
+- [IDENTITY_RESOLUTION.md](IDENTITY_RESOLUTION.md) — **LBIR-001**, fail-closed
+  identity resolution (no guess becomes identity). Provider precedence and timing
+  tolerances remain deferred.
+- [TEMPORAL_GOVERNANCE.md](TEMPORAL_GOVERNANCE.md) — temporal evidence and
+  freshness policy (no universal freshness threshold; closing policy still
+  Deferred under DEC-011).
+- [CONFLICT_AND_DEDUPLICATION.md](CONFLICT_AND_DEDUPLICATION.md) — duplicate vs.
+  conflict vs. revision vs. independent observation, provenance-preserving.
+- [SOURCE_GOVERNANCE.md](SOURCE_GOVERNANCE.md) — source rights; admission is not
+  publication authorization.
+
 ## Provenance requirements
 
 Every market observation must remain attributable to:

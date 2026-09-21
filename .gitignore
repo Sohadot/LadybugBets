@@ -1,0 +1,3 @@
+# Python bytecode caches produced when running the contract-validation tests.
+__pycache__/
+*.pyc

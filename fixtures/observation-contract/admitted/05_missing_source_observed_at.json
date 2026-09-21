@@ -1,0 +1,57 @@
+{
+  "contract": {
+    "contract_version": "1.0.0",
+    "observation_id": "lbobs_00000006"
+  },
+  "provenance": {
+    "provider_id": "PRV_ALPHA",
+    "source_reference": "feed:PRV_ALPHA/snapshot/2027-03-14T14:59:40Z#row-4599",
+    "source_record_id": "rec-4599",
+    "ingested_at": "2027-03-14T14:59:40Z"
+  },
+  "source_asserted": {
+    "source_event_id": "evt-55321",
+    "source_event_name": "Violet FC v Marigold United",
+    "source_sport_label": "Soccer",
+    "source_competition_id": "comp-9",
+    "source_competition_label": "Aster Premier Div",
+    "source_operator_id": "op-77",
+    "source_operator_name": "Aurora Books Feed",
+    "source_market_id": "mkt-1",
+    "source_market_label": "Match Result",
+    "source_outcome_id": "out-d",
+    "source_outcome_label": "Draw",
+    "source_participants": [
+      { "source_participant_id": "team-100", "source_participant_name": "Violet FC", "source_role": "home" },
+      { "source_participant_id": "team-200", "source_participant_name": "Marigold United", "source_role": "away" }
+    ],
+    "source_start_time": "2027-03-14T15:00:00+00:00",
+    "source_observed_at": null,
+    "source_jurisdiction": "UK",
+    "price": 3.25,
+    "price_format": "decimal"
+  },
+  "canonical": {
+    "sport": "football",
+    "competition_id": "lbcomp_0001",
+    "competition": "Aster Premier Division",
+    "event_id": "lbev_000001",
+    "participants": [
+      { "participant_id": "lbteam_0001", "participant_display_name": "Violet FC", "role": "home" },
+      { "participant_id": "lbteam_0002", "participant_display_name": "Marigold United", "role": "away" }
+    ],
+    "operator_id": "lbop_0001",
+    "operator_display_name": "Aurora Books",
+    "market_id": "lbmkt_0001",
+    "market": "1X2",
+    "outcome_id": "lboutc_0002",
+    "outcome": "draw",
+    "jurisdiction": "gb",
+    "start_time": "2027-03-14T15:00:00Z"
+  },
+  "governance": {
+    "admission_state": "ADMITTED",
+    "reason_codes": [],
+    "notes": "Price-compatible: source_observed_at is explicitly absent (null). ingested_at is retained and is NOT treated as source quote time. This observation does not by itself satisfy the temporal basis for a source-time Movement claim (see docs/TEMPORAL_GOVERNANCE.md)."
+  }
+}

@@ -1,0 +1,56 @@
+{
+  "contract": {
+    "contract_version": "1.0.0",
+    "observation_id": "lbobs_00000002"
+  },
+  "provenance": {
+    "provider_id": "PRV_ALPHA",
+    "source_reference": "feed:PRV_ALPHA/snapshot/2027-03-14T14:58:32Z#row-4472",
+    "source_record_id": "rec-4472",
+    "ingested_at": "2027-03-14T14:58:32Z"
+  },
+  "source_asserted": {
+    "source_event_id": "evt-55321",
+    "source_event_name": "Violet FC v Marigold United",
+    "source_sport_label": "Soccer",
+    "source_competition_id": "comp-9",
+    "source_competition_label": "Aster Premier Div",
+    "source_operator_id": "bk-1120",
+    "source_operator_name": "Zenith Odds",
+    "source_market_id": "mkt-1",
+    "source_market_label": "Match Result",
+    "source_outcome_id": "out-h",
+    "source_outcome_label": "Home",
+    "source_participants": [
+      { "source_participant_id": "team-100", "source_participant_name": "Violet FC", "source_role": "home" },
+      { "source_participant_id": "team-200", "source_participant_name": "Marigold United", "source_role": "away" }
+    ],
+    "source_start_time": "2027-03-14T15:00:00+00:00",
+    "source_observed_at": "2027-03-14T14:58:29+00:00",
+    "source_jurisdiction": "UK",
+    "price": 2.05,
+    "price_format": "decimal"
+  },
+  "canonical": {
+    "sport": "football",
+    "competition_id": "lbcomp_0001",
+    "competition": "Aster Premier Division",
+    "event_id": "lbev_000001",
+    "participants": [
+      { "participant_id": "lbteam_0001", "participant_display_name": "Violet FC", "role": "home" },
+      { "participant_id": "lbteam_0002", "participant_display_name": "Marigold United", "role": "away" }
+    ],
+    "operator_id": "lbop_0002",
+    "operator_display_name": "Zenith Odds",
+    "market_id": "lbmkt_0001",
+    "market": "1X2",
+    "outcome_id": "lboutc_0001",
+    "outcome": "home_win",
+    "jurisdiction": "gb",
+    "start_time": "2027-03-14T15:00:00Z"
+  },
+  "governance": {
+    "admission_state": "ADMITTED",
+    "reason_codes": []
+  }
+}

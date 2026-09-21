@@ -1,0 +1,19 @@
+{
+  "provider_id": "PRV_BETA",
+  "provider_name": "Provider Beta (synthetic)",
+  "access_basis": "public",
+  "terms_reference": "governance/source-terms/PRV_BETA#ref",
+  "terms_checked_date": "2027-02-20",
+  "attribution_requirements": null,
+  "geographic_restrictions": "Some entities restricted outside listed regions.",
+  "rights_matrix": {
+    "ingest_use": "ALLOWED",
+    "cache": "UNKNOWN",
+    "retain_historical": "PROHIBITED",
+    "derive_calculations": "ALLOWED",
+    "public_display": "UNKNOWN",
+    "redistribute_raw": "PROHIBITED",
+    "redistribute_derived": "UNKNOWN"
+  },
+  "qualification_status": "unqualified"
+}
