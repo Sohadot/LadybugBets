@@ -45,3 +45,20 @@ belongs to.
 
 If a value cannot be attributed to its source, time, event, market, and outcome,
 it must not be published as a LadybugBets market observation.
+
+## Admission is not publication authorization (Sprint 1 extension)
+
+Being **admitted** under the observation contract does **not** authorize
+publication (DEC-018). Semantic admission (structural/semantic sufficiency,
+governed by [OBSERVATION_CONTRACT.md](OBSERVATION_CONTRACT.md)) and publication
+authorization (source-rights posture, governed by
+[SOURCE_GOVERNANCE.md](SOURCE_GOVERNANCE.md)) are two independent gates.
+
+- A source observation may be internally **ADMITTED** while public display
+  remains blocked because the source's `public_display` right is `UNKNOWN` or
+  `PROHIBITED`.
+- Where a source's public-display right is `UNKNOWN`, public publication **fails
+  closed**.
+
+This mirrors the governing principle above: an ungoverned posture is not a
+license to publish.

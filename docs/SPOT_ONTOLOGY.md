@@ -16,6 +16,14 @@ prediction, a profitable opportunity, or advice to wager.
   interpretation.
 - Spot class names may evolve through governance; the meanings defined here are
   the Sprint 0 baseline that future code may implement.
+- **(Sprint 1)** Every Spot draws only on **governed source observations** admitted
+  under [OBSERVATION_CONTRACT.md](OBSERVATION_CONTRACT.md) (LBOC-001). Canonical
+  identities referenced by a Spot are resolved fail-closed under
+  [IDENTITY_RESOLUTION.md](IDENTITY_RESOLUTION.md) (LBIR-001) — an unresolved or
+  ambiguous identity is never guessed. Temporal adequacy (e.g. for Movement) is
+  governed by [TEMPORAL_GOVERNANCE.md](TEMPORAL_GOVERNANCE.md). Admission of an
+  observation does not by itself authorize publishing a Spot built from it (see
+  [PUBLICATION_POLICY.md](PUBLICATION_POLICY.md)).
 
 ---
 

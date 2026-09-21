@@ -30,9 +30,11 @@ regulatory status.
 
 ## Current project status
 
-**Foundation / pre-MVP.** This repository currently contains public
-foundational documentation only. No application code, database, data vendor,
-odds API, or user-facing product has been built.
+**Pre-MVP / governed-contract stage.** This repository contains public
+foundational documentation and a vendor-neutral governance contract for source
+observations. No application code, database, data vendor, odds API, ingestion
+pipeline, or user-facing product has been built. It is **not** a live platform,
+a live odds product, or a production data system.
 
 ## Initial product surfaces (planned)
 
@@ -66,6 +68,20 @@ These are planned surfaces, not shipped features:
 - [docs/MVP_SCOPE.md](docs/MVP_SCOPE.md) — MVP v0.1 scope
 - [DECISION_LOG.md](DECISION_LOG.md) — durable decisions
 
+## Governance contracts (Sprint 1)
+
+Sprint 1 converts the conceptual model into a governed, vendor-neutral,
+machine-inspectable observation contract. No vendor, database, or ingestion is
+selected or built.
+
+- [docs/OBSERVATION_CONTRACT.md](docs/OBSERVATION_CONTRACT.md) — **LBOC-001**, the governed observation envelope and three-state admission model (ADMITTED / QUARANTINED / REJECTED)
+- [docs/IDENTITY_RESOLUTION.md](docs/IDENTITY_RESOLUTION.md) — **LBIR-001**, fail-closed identity resolution ("no guess becomes identity")
+- [docs/TEMPORAL_GOVERNANCE.md](docs/TEMPORAL_GOVERNANCE.md) — temporal evidence and freshness policy
+- [docs/CONFLICT_AND_DEDUPLICATION.md](docs/CONFLICT_AND_DEDUPLICATION.md) — duplicate / conflict / revision / independent observation
+- [docs/SOURCE_GOVERNANCE.md](docs/SOURCE_GOVERNANCE.md) — source rights; admission is not publication authorization
+- Machine-readable contracts (JSON Schema draft 2020-12): [`contracts/observation-envelope.schema.json`](contracts/observation-envelope.schema.json), [`contracts/identity-mapping.schema.json`](contracts/identity-mapping.schema.json), [`contracts/source-profile.schema.json`](contracts/source-profile.schema.json)
+- Synthetic contract fixtures under [`fixtures/observation-contract/`](fixtures/observation-contract/), validated by [`tests/test_contract_fixtures.py`](tests/test_contract_fixtures.py) (Python standard library only)
+
 ## Legal and responsible-use posture
 
 This repository does not constitute a sportsbook or wagering service. Ladybug
@@ -78,5 +94,7 @@ regulated commercial functionality is introduced. See
 
 ## Development status
 
-Pre-MVP. Documentation-only. Contents describe current intent and governed
-foundations, not built functionality.
+Pre-MVP / governed-contract stage. The repository holds governance documents,
+vendor-neutral machine-readable contracts, synthetic fixtures, and a
+standard-library contract-validation test suite. It describes current intent and
+governed foundations, not a built or operational product.
