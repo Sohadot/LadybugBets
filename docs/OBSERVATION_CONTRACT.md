@@ -235,6 +235,34 @@ payload.
 Rejection must carry an explicit reason code. **Records are never silently
 discarded.**
 
+### State/reason classes (the state is not an arbitrary label)
+
+Reason codes fall into two classes, and the declared state must be justified by a
+reason of the matching class:
+
+- **Rejection-class** (machine-detectable defects): `INVALID_CONTRACT_VERSION`,
+  `MISSING_PROVIDER_PROVENANCE`, `MISSING_SOURCE_LOCATOR`,
+  `MISSING_REQUIRED_SOURCE_FIELD`, `INVALID_PRICE_FORMAT`, `INVALID_PRICE`.
+- **Quarantine-class** (governed uncertainty/conflict that may be resolvable):
+  every `UNRESOLVED_*_IDENTITY` / `AMBIGUOUS_*_IDENTITY`, `TEMPORAL_AMBIGUITY`,
+  and `CONFLICTING_SOURCE_ASSERTIONS`.
+
+Rules the validator enforces:
+
+- **QUARANTINED** is for governed uncertainty or conflict that may be resolvable;
+  a contract-consistent QUARANTINED record must carry **at least one
+  quarantine-class** reason. A rejection-class reason alone cannot justify
+  QUARANTINED (and any *actual* rejection-class defect fails closed to REJECTED).
+- **REJECTED** requires **at least one evidence-backed rejection-class** reason —
+  a declared rejection-class code that `detect_machine_conditions` actually
+  detects. A quarantine-class reason alone (e.g. `UNRESOLVED_OPERATOR_IDENTITY`)
+  **cannot** justify REJECTED. A REJECTED record may additionally carry
+  quarantine-class reasons when both kinds of condition genuinely coexist.
+
+Sprint 1 does **not** require exhaustive enumeration of every detected defect;
+one evidence-backed rejection-class reason is a sufficient deterministic basis for
+REJECTED. A mismatch is reported as `STATE_REASON_CLASS_INCONSISTENT`.
+
 ## Admission reason codes
 
 Controlled vocabulary (categorical, not scores). The identity codes are

@@ -464,6 +464,35 @@ def validate_observation(envelope):
                 Finding(code, "detected %s; a %s candidate must be REJECTED" % (code, state))
             )
 
+    # (c) State/reason-class compatibility: the declared state must be justified
+    #     by a reason of the matching class. Contract state is not an arbitrary
+    #     label. A quarantine-class reason (identity uncertainty/ambiguity or a
+    #     governed conflict) alone cannot justify REJECTED, and a rejection-class
+    #     reason alone cannot justify QUARANTINED.
+    if state == "REJECTED":
+        evidence_backed_rejection = [
+            code
+            for code in reason_codes
+            if code in REJECTION_CLASS_CODES and code in detected
+        ]
+        if not evidence_backed_rejection:
+            findings.append(
+                Finding(
+                    "STATE_REASON_CLASS_INCONSISTENT",
+                    "REJECTED requires >=1 evidence-backed rejection-class reason; "
+                    "a quarantine-class reason alone cannot justify REJECTED",
+                )
+            )
+    elif state == "QUARANTINED":
+        if not any(code in QUARANTINE_CLASS_CODES for code in reason_codes):
+            findings.append(
+                Finding(
+                    "STATE_REASON_CLASS_INCONSISTENT",
+                    "QUARANTINED requires >=1 quarantine-class reason "
+                    "(a rejection-class reason alone cannot justify QUARANTINED)",
+                )
+            )
+
     # --- Universal laws (all states) -----------------------------------------
     for key in _walk_keys(envelope):
         if isinstance(key, str) and key.lower() in FORBIDDEN_DERIVED_KEYS:

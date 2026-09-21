@@ -283,6 +283,70 @@ class ReasonEvidenceTests(unittest.TestCase):
         self.assertFalse(gov.is_contract_consistent(env))
 
 
+class StateReasonClassTests(unittest.TestCase):
+    """REJECTED vs QUARANTINED reason-class compatibility (state machine)."""
+
+    def test_class_constants_are_disjoint_and_used(self):
+        # The class constants must partition the reason vocabulary and be used.
+        self.assertTrue(set(gov.REJECTION_CLASS_CODES))
+        self.assertTrue(set(gov.QUARANTINE_CLASS_CODES))
+        self.assertEqual(set(gov.REJECTION_CLASS_CODES) & set(gov.QUARANTINE_CLASS_CODES), set())
+
+    def test_quarantined_unresolved_operator_fixture_is_consistent(self):
+        self.assertTrue(gov.is_contract_consistent(_quarantined()))
+
+    def test_same_fixture_flipped_to_rejected_is_inconsistent(self):
+        env = _quarantined()  # carries only UNRESOLVED_OPERATOR_IDENTITY
+        env["governance"]["admission_state"] = "REJECTED"
+        self.assertFalse(gov.is_contract_consistent(env))
+        self.assertIn("STATE_REASON_CLASS_INCONSISTENT", gov.finding_codes(env))
+
+    def test_invalid_price_rejected_fixture_is_consistent(self):
+        self.assertTrue(gov.is_contract_consistent(_rejected()))
+
+    def test_valid_candidate_rejected_with_only_identity_reason_is_inconsistent(self):
+        env = _admitted()
+        env["governance"]["admission_state"] = "REJECTED"
+        env["governance"]["reason_codes"] = ["UNRESOLVED_OPERATOR_IDENTITY"]
+        env["canonical"]["operator_id"] = None
+        env["canonical"]["operator_display_name"] = None
+        self.assertFalse(gov.is_contract_consistent(env))
+        self.assertIn("STATE_REASON_CLASS_INCONSISTENT", gov.finding_codes(env))
+
+    def test_invalid_price_rejected_with_only_identity_reason_is_inconsistent(self):
+        env = _admitted()
+        env["source_asserted"]["price"] = 0.5  # a real rejection-class defect exists
+        env["governance"]["admission_state"] = "REJECTED"
+        env["governance"]["reason_codes"] = ["UNRESOLVED_OPERATOR_IDENTITY"]
+        env["canonical"]["operator_id"] = None
+        env["canonical"]["operator_display_name"] = None
+        # The defect is real, but the declared reason is quarantine-class only.
+        self.assertFalse(gov.is_contract_consistent(env))
+        self.assertIn("STATE_REASON_CLASS_INCONSISTENT", gov.finding_codes(env))
+
+    def test_rejected_with_evidence_backed_defect_plus_quarantine_reason_is_consistent(self):
+        env = _admitted()
+        env["source_asserted"]["price"] = 0.5
+        env["governance"]["admission_state"] = "REJECTED"
+        env["governance"]["reason_codes"] = ["INVALID_PRICE", "UNRESOLVED_OPERATOR_IDENTITY"]
+        env["canonical"]["operator_id"] = None
+        env["canonical"]["operator_display_name"] = None
+        self.assertTrue(gov.is_contract_consistent(env))
+        self.assertFalse(gov.is_admitted(env))
+
+    def test_quarantined_with_only_rejection_class_reason_is_inconsistent(self):
+        env = _quarantined()
+        # Replace the quarantine reason with a rejection-class one that isn't even
+        # detected; QUARANTINED cannot be justified by a rejection-class reason.
+        env["governance"]["reason_codes"] = ["INVALID_CONTRACT_VERSION"]
+        self.assertFalse(gov.is_contract_consistent(env))
+        self.assertIn("STATE_REASON_CLASS_INCONSISTENT", gov.finding_codes(env))
+
+    def test_admitted_behaviour_unchanged(self):
+        self.assertTrue(gov.is_admitted(_admitted()))
+        self.assertEqual(gov.validate_observation(_admitted()), [])
+
+
 class DetectMachineConditionsTests(unittest.TestCase):
     def test_detect_does_not_infer_identity(self):
         env = _admitted()
