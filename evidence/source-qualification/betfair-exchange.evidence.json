@@ -2,11 +2,29 @@
   "evidence_version": "1.0.0",
   "provider_id": "PRV_BETFAIR_EXCHANGE",
   "provider_name": "Betfair Exchange API",
-  "official_domains": ["betfair.com"],
+  "official_domains": [
+    "betfair.com"
+  ],
   "checked_at": "2026-09-21",
   "evidence_items": [
     {
-      "evidence_id": "betfair-single-operator",
+      "evidence_id": "bf-football",
+      "provider_id": "PRV_BETFAIR_EXCHANGE",
+      "source_url": "https://support.developer.betfair.com/hc/en-us/articles/360006888191-What-API-Demo-Tools-are-available",
+      "source_title": "What API Demo Tools are available? - Betfair Developer Program",
+      "source_type": "SUPPORT",
+      "retrieved_at": "2026-09-21",
+      "source_effective_date": null,
+      "publisher_domain": "support.developer.betfair.com",
+      "claim_key": "football_coverage",
+      "claim_summary": "Soccer is an event type retrievable via the API (EventTypeId 1 = Soccer).",
+      "technical_posture": "VERIFIED",
+      "rights_posture": null,
+      "excerpt": "Request all events for EventTypeId 1 (Soccer).",
+      "notes": "Soccer confirmed; the specific EPL competition was not confirmed on this page (epl_coverage = NOT_VERIFIED)."
+    },
+    {
+      "evidence_id": "bf-single-operator",
       "provider_id": "PRV_BETFAIR_EXCHANGE",
       "source_url": "https://support.developer.betfair.com/hc/en-us/articles/6540502258077-What-Betfair-Exchange-market-data-is-available-from-listMarketBook-Stream-API",
       "source_title": "What Betfair Exchange market data is available from listMarketBook / Stream API? - Betfair Developer Program",
@@ -15,14 +33,30 @@
       "source_effective_date": null,
       "publisher_domain": "support.developer.betfair.com",
       "claim_key": "operator_level_prices",
-      "claim_summary": "The Exchange API returns Betfair's own exchange market data (back/lay prices, last traded price, traded volume) — a single exchange operator's prices, not aggregated external bookmaker feeds.",
+      "claim_summary": "The Exchange API returns Betfair's own exchange market data (back/lay prices, last traded price, traded volume).",
       "technical_posture": "VERIFIED",
       "rights_posture": null,
       "excerpt": "The screenshot shows the equivalent data on the Betfair Exchange website.",
-      "notes": "Operator-level, but the operator is a single exchange (Betfair). See betfair-operator-identity."
+      "notes": "Operator-level, but a single exchange operator (Betfair)."
     },
     {
-      "evidence_id": "betfair-operator-identity",
+      "evidence_id": "bf-multi-operator",
+      "provider_id": "PRV_BETFAIR_EXCHANGE",
+      "source_url": "https://support.developer.betfair.com/hc/en-us/articles/6540502258077-What-Betfair-Exchange-market-data-is-available-from-listMarketBook-Stream-API",
+      "source_title": "What Betfair Exchange market data is available from listMarketBook / Stream API? - Betfair Developer Program",
+      "source_type": "SUPPORT",
+      "retrieved_at": "2026-09-21",
+      "source_effective_date": null,
+      "publisher_domain": "support.developer.betfair.com",
+      "claim_key": "multi_operator_coverage",
+      "claim_summary": "The source exposes only Betfair's own exchange prices (a single exchange operator), not a multi-bookmaker comparison feed; there is exactly one quoted operator.",
+      "technical_posture": "UNSUPPORTED",
+      "rights_posture": null,
+      "excerpt": null,
+      "notes": "Provider identity (Betfair) equals the single operator identity; governed multi-operator Consensus/SpotBoard requires several distinct operators (DEC-013)."
+    },
+    {
+      "evidence_id": "bf-operator-identity",
       "provider_id": "PRV_BETFAIR_EXCHANGE",
       "source_url": "https://support.developer.betfair.com/hc/en-us/articles/6540502258077-What-Betfair-Exchange-market-data-is-available-from-listMarketBook-Stream-API",
       "source_title": "What Betfair Exchange market data is available from listMarketBook / Stream API? - Betfair Developer Program",
@@ -31,14 +65,46 @@
       "source_effective_date": null,
       "publisher_domain": "support.developer.betfair.com",
       "claim_key": "operator_identifier_or_stable_label",
-      "claim_summary": "The quoted operator is unambiguously Betfair (a single exchange). There is exactly one operator identity, so the source cannot supply multiple distinct operators.",
+      "claim_summary": "The quoted operator is unambiguously Betfair (a single exchange).",
       "technical_posture": "VERIFIED",
       "rights_posture": null,
       "excerpt": null,
-      "notes": "Provider identity (Betfair) equals the single operator identity here; governed multi-operator Consensus/SpotBoard requires several distinct operators (DEC-013)."
+      "notes": null
     },
     {
-      "evidence_id": "betfair-access-model",
+      "evidence_id": "bf-event-id",
+      "provider_id": "PRV_BETFAIR_EXCHANGE",
+      "source_url": "https://support.developer.betfair.com/hc/en-us/articles/360006888191-What-API-Demo-Tools-are-available",
+      "source_title": "What API Demo Tools are available? - Betfair Developer Program",
+      "source_type": "SUPPORT",
+      "retrieved_at": "2026-09-21",
+      "source_effective_date": null,
+      "publisher_domain": "support.developer.betfair.com",
+      "claim_key": "stable_event_identifier",
+      "claim_summary": "The API references event identifiers (eventId) and market identifiers (marketId) for retrieving events and prices.",
+      "technical_posture": "VERIFIED",
+      "rights_posture": null,
+      "excerpt": "Request all markets for a specific eventId ... Request prices for a specific marketId.",
+      "notes": "Raw/source event/market identity; selection (outcome) identifiers not shown on this page."
+    },
+    {
+      "evidence_id": "bf-market-id",
+      "provider_id": "PRV_BETFAIR_EXCHANGE",
+      "source_url": "https://support.developer.betfair.com/hc/en-us/articles/360006888191-What-API-Demo-Tools-are-available",
+      "source_title": "What API Demo Tools are available? - Betfair Developer Program",
+      "source_type": "SUPPORT",
+      "retrieved_at": "2026-09-21",
+      "source_effective_date": null,
+      "publisher_domain": "support.developer.betfair.com",
+      "claim_key": "market_identifier_or_stable_key",
+      "claim_summary": "Markets are identified by marketId (e.g. for price retrieval).",
+      "technical_posture": "VERIFIED",
+      "rights_posture": null,
+      "excerpt": null,
+      "notes": null
+    },
+    {
+      "evidence_id": "bf-access-model",
       "provider_id": "PRV_BETFAIR_EXCHANGE",
       "source_url": "https://support.developer.betfair.com/hc/en-us/articles/6540502258077-What-Betfair-Exchange-market-data-is-available-from-listMarketBook-Stream-API",
       "source_title": "What Betfair Exchange market data is available from listMarketBook / Stream API? - Betfair Developer Program",
@@ -47,11 +113,11 @@
       "source_effective_date": null,
       "publisher_domain": "support.developer.betfair.com",
       "claim_key": "access_model",
-      "claim_summary": "The accessible support article documents exchange market-data content but did not document identifier/timestamp field names or any data-use (retention/display/redistribution) rights; the deeper API reference pages were not retrievable in this sprint.",
+      "claim_summary": "The accessible support pages document market-data content and identifiers but not data-use rights, selection identifiers, timestamps, or request limits; deeper API reference pages were not retrievable this sprint.",
       "technical_posture": null,
       "rights_posture": null,
       "excerpt": null,
-      "notes": "Because no retrieved primary source established data-use rights, all Betfair rights are recorded UNKNOWN and fail closed."
+      "notes": "All rights recorded UNKNOWN and fail closed; a required licence is not itself a granted right."
     }
   ]
 }

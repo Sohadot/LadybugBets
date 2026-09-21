@@ -4,14 +4,17 @@
   "provider_name": "Betfair Exchange API",
   "checked_at": "2026-09-21",
   "evidence_bundle": "evidence/source-qualification/betfair-exchange.evidence.json",
-  "official_domains": ["betfair.com"],
+  "official_domains": [
+    "betfair.com"
+  ],
   "technical_matrix": {
-    "football_coverage": "NOT_VERIFIED",
+    "football_coverage": "VERIFIED",
     "epl_coverage": "NOT_VERIFIED",
     "operator_level_prices": "VERIFIED",
-    "stable_event_identifier": "NOT_VERIFIED",
+    "multi_operator_coverage": "UNSUPPORTED",
+    "stable_event_identifier": "VERIFIED",
     "operator_identifier_or_stable_label": "VERIFIED",
-    "market_identifier_or_stable_key": "NOT_VERIFIED",
+    "market_identifier_or_stable_key": "VERIFIED",
     "outcome_identifier_or_stable_key": "NOT_VERIFIED",
     "source_observed_timestamp": "NOT_VERIFIED",
     "historical_odds_access": "NOT_VERIFIED",
@@ -32,48 +35,66 @@
   "capabilities": {
     "CURRENT_PRICE_OBSERVATION": {
       "outcome": "UNRESOLVED",
-      "evidence_ids": ["betfair-single-operator", "betfair-operator-identity", "betfair-access-model"],
-      "notes": "Football/EPL, event/market/outcome identifiers, and ingest rights not established; and the source provides only a single operator (Betfair)."
+      "evidence_ids": [
+        "bf-football",
+        "bf-multi-operator",
+        "bf-access-model"
+      ],
+      "notes": "Soccer, event/market identity and a single operator are evidenced, but EPL competition and outcome identifiers are not confirmed and ingest rights are UNKNOWN."
     },
     "PUBLIC_SPOTBOARD": {
-      "outcome": "UNRESOLVED",
-      "evidence_ids": ["betfair-operator-identity", "betfair-access-model"],
-      "notes": "Base capability unresolved; additionally, a single-operator source cannot supply the multiple distinct operators a governed operator-level SpotBoard/Consensus needs."
+      "outcome": "NOT_QUALIFIED",
+      "evidence_ids": [
+        "bf-multi-operator"
+      ],
+      "notes": "NOT_QUALIFIED: a single-operator source (multi_operator_coverage UNSUPPORTED) cannot support the operator-diverse SpotBoard the capability requires."
     },
     "DERIVED_PROBABILITY_DISPLAY": {
       "outcome": "UNRESOLVED",
-      "evidence_ids": ["betfair-access-model"],
-      "notes": "Derivation and display rights not established from public evidence."
+      "evidence_ids": [
+        "bf-access-model"
+      ],
+      "notes": "Base unresolved and derivation/display rights not established."
     },
     "SOURCE_TIME_MARKET_MOVEMENT": {
       "outcome": "UNRESOLVED",
-      "evidence_ids": ["betfair-access-model"],
+      "evidence_ids": [
+        "bf-access-model"
+      ],
       "notes": "Source-observed timestamp semantics not confirmed (NOT_VERIFIED)."
     },
     "HISTORICAL_DATASET_RETENTION": {
       "outcome": "UNRESOLVED",
-      "evidence_ids": ["betfair-access-model"],
+      "evidence_ids": [
+        "bf-access-model"
+      ],
       "notes": "Retention rights not established from public evidence."
     },
     "RAW_DATA_REDISTRIBUTION": {
       "outcome": "UNRESOLVED",
-      "evidence_ids": ["betfair-access-model"],
+      "evidence_ids": [
+        "bf-access-model"
+      ],
       "notes": "Redistribution rights not established from public evidence."
     }
   },
   "blockers": [
-    "Single-operator source: the Exchange API supplies only Betfair's own exchange prices, so it cannot on its own support governed multi-operator Consensus or an operator-diverse SpotBoard (DEC-013: provider diversity is not operator diversity).",
-    "Data-use rights are not established by any retrieved primary source (all rights UNKNOWN, fail closed); commercial use reportedly requires a licensed vendor arrangement.",
-    "Football/EPL coverage, identifier fields, and timestamp semantics were not confirmable from accessible primary documentation (deeper API reference pages were not retrievable)."
+    "Single-operator source: multi_operator_coverage = UNSUPPORTED. The Exchange supplies only Betfair's own exchange prices, so it cannot support governed multi-operator Consensus or an operator-diverse SpotBoard (DEC-013).",
+    "Data-use rights are not established by any retrieved primary source (all rights UNKNOWN, fail closed); commercial use reportedly requires a licensed vendor arrangement (a licence being required does not itself grant a right).",
+    "EPL competition, selection/runner (outcome) identifiers, timestamp semantics, historical availability, and request limits were not confirmable from accessible primary documentation."
   ],
   "unresolved_questions": [
-    "Does a Betfair licensed-vendor / commercial arrangement permit ingesting, caching, retaining, publicly displaying, and/or redistributing exchange data? Requires reviewing the vendor licence, out of scope for this evidence-only sprint.",
-    "What are the documented marketId/eventId/selectionId identifier fields and the exchange price/state timestamps (e.g. lastMatchTime, publishTime)?",
-    "Is EPL match-winner data available on the exchange with a usable event identity?"
+    "Does a Betfair licensed-vendor / commercial arrangement permit ingesting, caching, retaining, publicly displaying, and/or redistributing exchange data? Requires reviewing the vendor licence (out of scope).",
+    "What are the selection/runner (selectionId) identifiers and the exchange price/state timestamps (e.g. lastMatchTime, publishTime)?",
+    "Is EPL match-winner data available on the exchange with a usable event identity, and what are the documented request/data limits?"
   ],
   "evidence_ids": [
-    "betfair-single-operator",
-    "betfair-operator-identity",
-    "betfair-access-model"
+    "bf-football",
+    "bf-single-operator",
+    "bf-multi-operator",
+    "bf-operator-identity",
+    "bf-event-id",
+    "bf-market-id",
+    "bf-access-model"
   ]
 }

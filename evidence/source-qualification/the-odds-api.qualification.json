@@ -4,11 +4,14 @@
   "provider_name": "The Odds API",
   "checked_at": "2026-09-21",
   "evidence_bundle": "evidence/source-qualification/the-odds-api.evidence.json",
-  "official_domains": ["the-odds-api.com"],
+  "official_domains": [
+    "the-odds-api.com"
+  ],
   "technical_matrix": {
     "football_coverage": "VERIFIED",
     "epl_coverage": "VERIFIED",
     "operator_level_prices": "VERIFIED",
+    "multi_operator_coverage": "VERIFIED",
     "stable_event_identifier": "VERIFIED",
     "operator_identifier_or_stable_label": "VERIFIED",
     "market_identifier_or_stable_key": "VERIFIED",
@@ -32,45 +35,92 @@
   "capabilities": {
     "CURRENT_PRICE_OBSERVATION": {
       "outcome": "QUALIFIED",
-      "evidence_ids": ["oddsapi-epl-coverage", "oddsapi-operator-level", "oddsapi-operator-id", "oddsapi-event-id", "oddsapi-market-key", "oddsapi-outcome-key", "oddsapi-ingest-use"],
-      "notes": "Operator-level EPL prices with event/market/outcome identity and ingest rights."
+      "evidence_ids": [
+        "oddsapi-football-coverage",
+        "oddsapi-epl-coverage",
+        "oddsapi-operator-level",
+        "oddsapi-event-id",
+        "oddsapi-operator-id",
+        "oddsapi-market-key",
+        "oddsapi-outcome-key",
+        "oddsapi-ingest-use"
+      ],
+      "notes": "Operator-level EPL prices with event/market/outcome identity and ingest rights (subject to the primary-product condition)."
     },
     "PUBLIC_SPOTBOARD": {
       "outcome": "QUALIFIED",
-      "evidence_ids": ["oddsapi-public-display"],
-      "notes": "Public display explicitly permitted."
+      "evidence_ids": [
+        "oddsapi-football-coverage",
+        "oddsapi-epl-coverage",
+        "oddsapi-operator-level",
+        "oddsapi-event-id",
+        "oddsapi-operator-id",
+        "oddsapi-market-key",
+        "oddsapi-outcome-key",
+        "oddsapi-multi-operator",
+        "oddsapi-ingest-use",
+        "oddsapi-public-display"
+      ],
+      "notes": "Public display permitted and multiple operators available (subject to the primary-product condition)."
     },
     "DERIVED_PROBABILITY_DISPLAY": {
       "outcome": "QUALIFIED",
-      "evidence_ids": ["oddsapi-derive", "oddsapi-public-display"],
-      "notes": "Deriving and displaying derived values explicitly permitted."
+      "evidence_ids": [
+        "oddsapi-football-coverage",
+        "oddsapi-epl-coverage",
+        "oddsapi-operator-level",
+        "oddsapi-event-id",
+        "oddsapi-operator-id",
+        "oddsapi-market-key",
+        "oddsapi-outcome-key",
+        "oddsapi-ingest-use",
+        "oddsapi-derive",
+        "oddsapi-public-display"
+      ],
+      "notes": "Deriving and displaying derived values permitted (subject to the primary-product condition)."
     },
     "SOURCE_TIME_MARKET_MOVEMENT": {
       "outcome": "QUALIFIED",
-      "evidence_ids": ["oddsapi-source-time", "oddsapi-operator-id", "oddsapi-historical", "oddsapi-retain"],
-      "notes": "Bookmaker-level source-observed timing plus retention rights support source-time movement."
+      "evidence_ids": [
+        "oddsapi-operator-level",
+        "oddsapi-operator-id",
+        "oddsapi-source-time",
+        "oddsapi-event-id",
+        "oddsapi-market-key",
+        "oddsapi-outcome-key",
+        "oddsapi-ingest-use",
+        "oddsapi-retain"
+      ],
+      "notes": "Provider-observed per-market timing plus retention rights support source-time movement."
     },
     "HISTORICAL_DATASET_RETENTION": {
       "outcome": "QUALIFIED",
-      "evidence_ids": ["oddsapi-retain", "oddsapi-ingest-use"],
-      "notes": "Indefinite retention explicitly permitted."
+      "evidence_ids": [
+        "oddsapi-ingest-use",
+        "oddsapi-retain"
+      ],
+      "notes": "Indefinite retention permitted (subject to the primary-product condition)."
     },
     "RAW_DATA_REDISTRIBUTION": {
       "outcome": "NOT_QUALIFIED",
-      "evidence_ids": ["oddsapi-redistribute-raw"],
+      "evidence_ids": [
+        "oddsapi-redistribute-raw"
+      ],
       "notes": "Raw redistribution as a standalone data product is prohibited. Not required for the consumer MVP."
     }
   },
   "blockers": [
-    "Raw data redistribution is prohibited (redistribute_raw = PROHIBITED); acceptable for MVP, which does not redistribute raw feeds."
+    "Raw redistribution as a standalone data product is prohibited (redistribute_raw = PROHIBITED); acceptable for the consumer MVP.",
+    "All permitted uses are conditional: they apply provided The Odds API data is not the primary product being sold or redistributed."
   ],
   "unresolved_questions": [
-    "Do the terms permit redistributing LadybugBets-derived data (not just displaying it) as part of a separate product? Public terms permit deriving and displaying, but do not clearly address derived-data redistribution; recorded as UNKNOWN.",
-    "Are there any geographic or jurisdiction restrictions on use? No clause was found in the public terms."
+    "Redistribution (not display) of LadybugBets-derived data is not clearly addressed by the public terms; recorded UNKNOWN.",
+    "No geographic/jurisdiction clause was found in the public terms."
   ],
   "evidence_ids": [
     "oddsapi-football-coverage",
     "oddsapi-epl-coverage",
+    "oddsapi-multi-operator",
     "oddsapi-operator-level",
     "oddsapi-operator-id",
     "oddsapi-event-id",

@@ -2,7 +2,9 @@
   "evidence_version": "1.0.0",
   "provider_id": "PRV_THE_ODDS_API",
   "provider_name": "The Odds API",
-  "official_domains": ["the-odds-api.com"],
+  "official_domains": [
+    "the-odds-api.com"
+  ],
   "checked_at": "2026-09-21",
   "evidence_items": [
     {
@@ -15,11 +17,11 @@
       "source_effective_date": null,
       "publisher_domain": "the-odds-api.com",
       "claim_key": "football_coverage",
-      "claim_summary": "Soccer is documented with per-league sport keys (e.g. soccer_epl and other soccer leagues).",
+      "claim_summary": "Soccer is documented with per-league sport keys (e.g. soccer_epl).",
       "technical_posture": "VERIFIED",
       "rights_posture": null,
       "excerpt": null,
-      "notes": "Football/soccer is a first-class sport group in the API."
+      "notes": null
     },
     {
       "evidence_id": "oddsapi-epl-coverage",
@@ -31,11 +33,27 @@
       "source_effective_date": null,
       "publisher_domain": "the-odds-api.com",
       "claim_key": "epl_coverage",
-      "claim_summary": "EPL odds are covered from multiple bookmakers by region (US/UK/EU/AU); historical EPL odds available from mid-2020 for featured markets.",
+      "claim_summary": "EPL odds covered from multiple bookmakers by region; historical EPL odds from mid-2020 for featured markets.",
       "technical_posture": "VERIFIED",
       "rights_posture": null,
       "excerpt": "Historical EPL odds are available from mid-2020 for featured markets (moneyline, totals).",
       "notes": null
+    },
+    {
+      "evidence_id": "oddsapi-multi-operator",
+      "provider_id": "PRV_THE_ODDS_API",
+      "source_url": "https://the-odds-api.com/sports-odds-data/epl-odds.html",
+      "source_title": "EPL Odds API | The Odds API",
+      "source_type": "COVERAGE",
+      "retrieved_at": "2026-09-21",
+      "source_effective_date": null,
+      "publisher_domain": "the-odds-api.com",
+      "claim_key": "multi_operator_coverage",
+      "claim_summary": "EPL odds are returned from many distinct bookmakers across US/UK/EU/AU regions, i.e. multiple quoted operators.",
+      "technical_posture": "VERIFIED",
+      "rights_posture": null,
+      "excerpt": null,
+      "notes": "Multiple distinct operators, not a single aggregated price."
     },
     {
       "evidence_id": "oddsapi-operator-level",
@@ -47,11 +65,11 @@
       "source_effective_date": null,
       "publisher_domain": "the-odds-api.com",
       "claim_key": "operator_level_prices",
-      "claim_summary": "Odds are returned per individual bookmaker; each event carries a bookmakers array with per-bookmaker prices.",
+      "claim_summary": "Each event carries a bookmakers array with per-bookmaker prices.",
       "technical_posture": "VERIFIED",
       "rights_posture": null,
       "excerpt": null,
-      "notes": "Distinct operator-attributed prices, not a single aggregated price."
+      "notes": null
     },
     {
       "evidence_id": "oddsapi-operator-id",
@@ -63,7 +81,7 @@
       "source_effective_date": null,
       "publisher_domain": "the-odds-api.com",
       "claim_key": "operator_identifier_or_stable_label",
-      "claim_summary": "Each bookmaker has a stable 'key' (e.g. draftkings) plus a display 'title'.",
+      "claim_summary": "Each bookmaker has a stable key (e.g. draftkings) plus a display title.",
       "technical_posture": "VERIFIED",
       "rights_posture": null,
       "excerpt": null,
@@ -79,11 +97,11 @@
       "source_effective_date": null,
       "publisher_domain": "the-odds-api.com",
       "claim_key": "stable_event_identifier",
-      "claim_summary": "Events carry an 'id', plus sport_key, commence_time, home_team, away_team.",
+      "claim_summary": "Events carry an id, plus sport_key, commence_time, home_team, away_team.",
       "technical_posture": "VERIFIED",
       "rights_posture": null,
       "excerpt": null,
-      "notes": "Raw/source event identity; participant components (home_team/away_team) present."
+      "notes": "Raw/source event identity with participant components."
     },
     {
       "evidence_id": "oddsapi-market-key",
@@ -95,7 +113,7 @@
       "source_effective_date": null,
       "publisher_domain": "the-odds-api.com",
       "claim_key": "market_identifier_or_stable_key",
-      "claim_summary": "Markets use stable keys such as h2h (head-to-head / match winner), spreads, totals.",
+      "claim_summary": "Markets use stable keys such as h2h (match winner), spreads, totals.",
       "technical_posture": "VERIFIED",
       "rights_posture": null,
       "excerpt": null,
@@ -127,11 +145,11 @@
       "source_effective_date": null,
       "publisher_domain": "the-odds-api.com",
       "claim_key": "source_observed_timestamp",
-      "claim_summary": "last_update documents the last time odds updated from the bookmaker; historical snapshot 'timestamp' is the closest snapshot at or earlier than the requested time, i.e. the state time of the snapshot.",
+      "claim_summary": "Market-level last_update is the last time The Odds API's system saw odds for that market from the bookmaker (a provider-observed timestamp for the bookmaker market state, not a bookmaker-originated timestamp). The historical snapshot 'timestamp' is the state time of the snapshot.",
       "technical_posture": "VERIFIED",
       "rights_posture": null,
-      "excerpt": "last_update: Last time odds saw update from bookmaker.",
-      "notes": "A bookmaker-originated quote-update time and an explicit snapshot state time; not merely an API response-generated time."
+      "excerpt": "The market-level last_update field shows the last time our system saw odds for that market from the bookmaker.",
+      "notes": "Provider-observed source state satisfies the LBSQ-001 source-observed definition; it is not claimed to originate at the bookmaker (preserves DEC-020)."
     },
     {
       "evidence_id": "oddsapi-historical",
@@ -163,7 +181,7 @@
       "technical_posture": "VERIFIED",
       "rights_posture": null,
       "excerpt": null,
-      "notes": "Public self-serve plans with published monthly credit quotas and a free tier."
+      "notes": null
     },
     {
       "evidence_id": "oddsapi-ingest-use",
@@ -175,11 +193,11 @@
       "source_effective_date": "2026-08-31",
       "publisher_domain": "the-odds-api.com",
       "claim_key": "ingest_use",
-      "claim_summary": "Commercial use is permitted, including displaying the data in a UI/website/app for commercial use, provided the data is not the primary product sold.",
+      "claim_summary": "Commercial use in user-facing applications is supported, provided the data is not the primary product being sold or redistributed.",
       "technical_posture": null,
       "rights_posture": "ALLOWED",
-      "excerpt": "Displaying our data in a UI, website, or mobile app, including for commercial use.",
-      "notes": null
+      "excerpt": "...including commercial use, provided our data is not the primary product being sold or redistributed.",
+      "notes": "Permitted under the currently published terms provided The Odds API data is not the primary product being sold or redistributed."
     },
     {
       "evidence_id": "oddsapi-cache",
@@ -191,11 +209,11 @@
       "source_effective_date": "2026-08-31",
       "publisher_domain": "the-odds-api.com",
       "claim_key": "cache",
-      "claim_summary": "Storing the data and retaining it indefinitely is explicitly permitted.",
+      "claim_summary": "Storing the data and retaining it indefinitely is permitted.",
       "technical_posture": null,
       "rights_posture": "ALLOWED",
       "excerpt": "Storing our data and retaining it indefinitely.",
-      "notes": null
+      "notes": "Permitted under the currently published terms provided The Odds API data is not the primary product being sold or redistributed."
     },
     {
       "evidence_id": "oddsapi-retain",
@@ -207,11 +225,11 @@
       "source_effective_date": "2026-08-31",
       "publisher_domain": "the-odds-api.com",
       "claim_key": "retain_historical",
-      "claim_summary": "Retaining the data indefinitely is explicitly permitted, which supports building a historical dataset from pulled observations.",
+      "claim_summary": "Retaining the data indefinitely is permitted, supporting a historical dataset from pulled observations.",
       "technical_posture": null,
       "rights_posture": "ALLOWED",
       "excerpt": "Storing our data and retaining it indefinitely.",
-      "notes": null
+      "notes": "Permitted under the currently published terms provided The Odds API data is not the primary product being sold or redistributed."
     },
     {
       "evidence_id": "oddsapi-derive",
@@ -223,11 +241,11 @@
       "source_effective_date": "2026-08-31",
       "publisher_domain": "the-odds-api.com",
       "claim_key": "derive_calculations",
-      "claim_summary": "Calculating and displaying values derived from the data is permitted (e.g. analytical dashboards).",
+      "claim_summary": "Calculating and displaying values derived from the data is permitted.",
       "technical_posture": null,
       "rights_posture": "ALLOWED",
       "excerpt": "Calculating and displaying values you derive from our data.",
-      "notes": null
+      "notes": "Permitted under the currently published terms provided The Odds API data is not the primary product being sold or redistributed."
     },
     {
       "evidence_id": "oddsapi-public-display",
@@ -239,11 +257,11 @@
       "source_effective_date": "2026-08-31",
       "publisher_domain": "the-odds-api.com",
       "claim_key": "public_display",
-      "claim_summary": "Public display of the data in a UI/website/app, including for commercial use, is explicitly permitted.",
+      "claim_summary": "Public display in websites/apps/dashboards including commercial use is supported, provided the data is not the primary product sold or redistributed.",
       "technical_posture": null,
       "rights_posture": "ALLOWED",
-      "excerpt": "Displaying our data in a UI, website, or mobile app, including for commercial use.",
-      "notes": null
+      "excerpt": "...user-facing applications, including commercial use, provided our data is not the primary product being sold or redistributed.",
+      "notes": "Permitted under the currently published terms provided The Odds API data is not the primary product being sold or redistributed."
     },
     {
       "evidence_id": "oddsapi-redistribute-raw",
@@ -255,7 +273,7 @@
       "source_effective_date": "2026-08-31",
       "publisher_domain": "the-odds-api.com",
       "claim_key": "redistribute_raw",
-      "claim_summary": "Reselling, repackaging, or redistributing the raw data as a standalone data product (including via APIs or feeds) is prohibited.",
+      "claim_summary": "Reselling, repackaging, or redistributing the raw data as a standalone data product is prohibited.",
       "technical_posture": null,
       "rights_posture": "PROHIBITED",
       "excerpt": "Do not resell, repackage, or redistribute our data as a standalone data product.",
