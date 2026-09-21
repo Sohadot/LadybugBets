@@ -11,7 +11,9 @@ LadybugBets may:
 
 - display market data from governed sources
 - calculate implied probabilities from governed prices
-- calculate bookmaker margin / overround where mathematically applicable
+- calculate overround / implied margin (book percentage) where mathematically
+  applicable — as a price-derived measure, not a claim about realized operator
+  margin
 - compare prices across outcomes and sources
 - show historical price movement between comparable observations
 - describe market observations in plain, sober language

@@ -17,9 +17,10 @@ little on its own about:
 
 - **implied probability** — what the price implies about the chance of the
   outcome
-- **bookmaker margin** — the overround baked into a set of prices
-- **disagreement across sources** — where different books or feeds imply
-  different probabilities for the same outcome
+- **implied margin (overround)** — the book percentage baked into a set of
+  prices, which is not by itself the operator's realized margin
+- **disagreement across sources** — where different providers or bookmakers
+  imply different probabilities for the same outcome
 - **movement over time** — how a price has drifted or shifted since it opened
 - **closing price** — where a market settled relative to earlier observations
 - **personal historical behavior** — how a user's own past observations and

@@ -22,6 +22,7 @@ foundations.
 | DEC-010 | 2026-09-21 | Ratified | The public repository must not contain secrets or sensitive internal commercial information. |
 | DEC-011 | 2026-09-21 | Deferred | The closing-price policy (definition of "closing"/"near-closing", timing, and source rules) that the Closing Spot depends on requires a later governance decision before implementation. |
 | DEC-012 | 2026-09-21 | Deferred | No "edge score" or numerical scoring system is ratified; introducing one requires a later, explicit governance decision. |
+| DEC-013 | 2026-09-21 | Ratified | **Observation Provenance Dimensions.** LadybugBets treats upstream provider identity, quoted bookmaker/operator identity, canonical LadybugBets metadata, source-observed time, ingestion time, and derived calculations as distinct semantic dimensions. They must not be silently conflated. In particular, provider diversity is not bookmaker/operator diversity, ingestion time is not source-observed (quote) time, and overround is a price-derived implied margin measure, not a measurement of realized operator margin. |
 
 ## Deferred / open questions
 

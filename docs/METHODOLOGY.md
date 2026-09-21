@@ -56,31 +56,45 @@ probability is `1 / d`. A wager is only expected-value-positive if the true
 probability exceeds the break-even probability — and the true probability is not
 observable from price alone.
 
-## Overround / bookmaker margin
+## Overround / book percentage / implied margin measure
 
 For a market with mutually exclusive and collectively exhaustive outcomes with
 prices implying probabilities `p_1, p_2, ..., p_n`, the **overround** (also
-called the margin or "vig") is:
+called the **book percentage** or an **implied margin measure**) is:
 
 ```
 overround = (p_1 + p_2 + ... + p_n) - 1
 ```
 
-The sum `p_1 + ... + p_n` is often called the "book sum" or "book percentage".
+The sum `p_1 + ... + p_n` is the "book sum" or "book percentage".
+
+### What overround is — and is not
+
+The overround is the market's calculated overround **under the observed quoted
+prices**. It is a property of the prices as observed, not a measurement of the
+bookmaker's business results.
+
+It is **not**, by itself, a measurement of the bookmaker's realized profit,
+hold, revenue, or actual margin. A bookmaker's realized margin depends on
+customer behavior, staking distribution across outcomes, limits, and risk
+management — none of which the quoted prices reveal. Two markets with the same
+overround can produce very different realized outcomes for the operator.
+Treat overround as an **implied margin measure derived from prices**, not as
+proof of realized profitability.
 
 ### Why raw implied probabilities may sum above 100%
 
 For a real bookmaker's market, the raw implied probabilities typically sum to
-**more than 1** (100%). This excess is the overround — the margin built into the
-prices. It is not an error; it is structural. A "fair" set of prices with no
-margin would sum to exactly 1.
+**more than 1** (100%). This excess is the overround — the implied margin built
+into the quoted prices. It is not an error; it is structural. A "fair" set of
+prices with no implied margin would sum to exactly 1.
 
-### Why removing margin requires an explicit normalization method
+### Why removing the implied margin requires an explicit normalization method
 
 Because the raw probabilities sum above 1, converting them into probabilities
-that sum to 1 requires **removing** the margin — and there is more than one way
-to do this (e.g. proportional/normalization by dividing each by the book sum,
-or other margin-allocation methods). Different methods produce different
+that sum to 1 requires **removing** the implied margin — and there is more than
+one way to do this (e.g. proportional normalization by dividing each by the book
+sum, or other margin-allocation methods). Different methods produce different
 "de-margined" probabilities. Therefore:
 
 - A normalized probability is only meaningful when the **method is named**.

@@ -44,18 +44,26 @@ prediction, a profitable opportunity, or advice to wager.
 - **Canonical name:** Movement Spot
 - **Purpose:** Represent a governed change between comparable price observations
   over time.
-- **Required inputs:** two or more comparable Price Spots (same event, market,
-  outcome, and comparable source basis) with distinct timestamps.
+- **Required inputs:** two or more comparable Price Spots with distinct
+  timestamps. Comparability requires the same event, market, and outcome **and**
+  the same quoted bookmaker/operator basis — i.e. the observations must be
+  attributed to the same operator identity. Unless a later governed methodology
+  intentionally defines cross-operator movement, movement is defined within a
+  single operator's quoted prices.
 - **Derived outputs:** movement amount and/or direction between the observations
   (a derived calculation).
-- **What it means:** "Between these observed timestamps, the price for this
-  outcome changed by this amount."
+- **What it means:** "For this operator's quoted price, between these observed
+  timestamps, the price for this outcome changed by this amount."
 - **What it does NOT mean:** that the movement will continue, reverse, or
-  predict the outcome.
-- **Minimum provenance:** provenance of every underlying Price Spot, plus the
-  comparison basis used.
+  predict the outcome. A change in Bookmaker X's price and a difference between
+  Bookmaker X and Bookmaker Y are **not** the same analytical object; the latter
+  is a cross-operator comparison, not a Movement Spot.
+- **Minimum provenance:** provenance of every underlying Price Spot (including
+  provider and quoted operator identity), plus the comparison basis used.
 - **Can it exist without historical data?** No. It requires at least two
   observations over time.
+- **Governance note:** Cross-operator (cross-book) movement is **not** defined in
+  Sprint 0. Defining it requires a later governed methodology.
 
 ---
 
@@ -71,8 +79,8 @@ prediction, a profitable opportunity, or advice to wager.
 - **What it means:** "Under this stated method, this price implies this
   probability."
 - **What it does NOT mean:** the true probability of the outcome, or a
-  probability free of bookmaker margin unless a normalization method is
-  explicitly applied and disclosed.
+  probability free of the prices' implied margin (overround) unless a
+  normalization method is explicitly applied and disclosed.
 - **Minimum provenance:** the underlying price's provenance plus the exact
   method used.
 - **Can it exist without historical data?** Yes. It can derive from a single
@@ -83,22 +91,42 @@ prediction, a profitable opportunity, or advice to wager.
 ## 4. Consensus Spot
 
 - **Canonical name:** Consensus Spot
-- **Purpose:** Provide a cross-source representation of comparable market
+- **Purpose:** Provide a cross-operator representation of comparable market
   observations for the same outcome.
+- **Consensus population (MVP semantics):** Consensus is defined over multiple
+  comparable quotations attributed to **distinct governed bookmaker/operator
+  identities**, unless a future methodology explicitly defines another consensus
+  population. Upstream **provider** diversity is not the consensus population and
+  must not be equated with operator diversity (see the distinction below).
 - **Required inputs:** two or more comparable observations for the same event,
-  market, and outcome, from distinct governed sources, with provenance.
-- **Derived outputs:** a cross-source representation (e.g. range, spread across
-  sources, or an explicitly defined aggregate) — always labeled as derived.
-- **What it means:** "Across these named sources, the observed prices for this
+  market, and outcome, attributed to **distinct bookmaker/operator identities**,
+  each with full provenance (provider and operator).
+- **Derived outputs:** a cross-operator representation (e.g. range, spread across
+  operators, or an explicitly defined aggregate) — always labeled as derived.
+- **What it means:** "Across these named operators, the observed prices for this
   outcome looked like this."
 - **What it does NOT mean:** market truth. A simple arithmetic average is **not**
   "market truth"; it is one derived summary among several possible ones and must
   be presented as such.
-- **Minimum provenance:** provenance of every contributing source observation
-  and the aggregation method used.
-- **Can it exist without historical data?** Yes, if multiple sources are
+- **Minimum provenance:** provenance of every contributing observation —
+  including both provider and quoted operator identity — and the aggregation
+  method used.
+- **Can it exist without historical data?** Yes, if multiple operators are
   observed at (approximately) the same time; it does not require history, but it
-  does require multiple sources.
+  does require multiple distinct operators.
+
+**Provider diversity ≠ bookmaker diversity.** Upstream data providers and quoted
+bookmakers are different dimensions (see [DATA_MODEL.md](DATA_MODEL.md)):
+
+- Provider A → Bookmaker X and Provider A → Bookmaker Y are **two distinct
+  bookmaker observations**, even though both arrived through a single provider.
+- Provider A → Bookmaker X and Provider B → Bookmaker X must **not** be treated
+  as two independent bookmaker opinions merely because two feeds delivered the
+  same bookmaker's quotation.
+
+Any deduplication, conflict-resolution, freshness, or provider-precedence rule
+(for the second case above and others) is **deferred to Sprint 1 governance**.
+No independence-scoring system is defined or implied here.
 
 ---
 
