@@ -34,9 +34,11 @@ Two identity dimensions are commonly (and wrongly) collapsed. They are separate:
 
 - **Upstream data source / provider** (`provider_id`) — the governed system or
   feed *from which LadybugBets obtained the record*. This is the data supplier.
-- **Quoted operator / bookmaker** (`operator_id`, and optionally a separate
-  `operator_display_name`) — the bookmaker or market operator *to which the
-  quoted price is attributed*.
+- **Quoted operator / bookmaker** — the bookmaker or market operator *to which
+  the quoted price is attributed*. This identity has both a raw source-asserted
+  form (`source_operator_id` / `source_operator_name`) and a canonical
+  LadybugBets form (`operator_id` / `operator_display_name`); see the
+  identity-normalization law below.
 
 The provider is not automatically the bookmaker whose price is quoted:
 
@@ -48,30 +50,83 @@ The provider is not automatically the bookmaker whose price is quoted:
 Neither case may be collapsed. Provider identity and quoted bookmaker/operator
 identity are different semantic dimensions and must be retained separately.
 
+### Identity-normalization law
+
+**Raw source identity and LadybugBets canonical identity are distinct semantic
+values and must never be silently collapsed.**
+
+- A **provider-specific identifier or label** is evidence about *how that
+  provider identifies an entity*. It is source-asserted.
+- A **LadybugBets canonical identifier** is an *alignment construct* used to
+  identify the same governed entity across providers. It is canonical/normalized.
+
+They are not interchangeable. Different upstream providers may use different
+identifiers or labels for the same bookmaker/operator (or event, competition,
+market, or outcome); resolving those raw identities to one canonical identity is
+a governed act, not an assumption. A raw source identifier must never be
+substituted for a LadybugBets canonical identifier, and a canonical identifier
+must never be presented as though the source asserted it.
+
+This law applies to every entity where raw source identity and canonical
+identity may differ. **The operator-resolution algorithm, fuzzy matching, and
+precedence rules are not defined in Sprint 0** — they are deferred to Sprint 1.
+Until identity resolution is governed, canonical identities may not yet be
+resolvable, and raw labels must not be treated as canonical.
+
+### Provider identity as governed provenance
+
+`provider_id` is an **ingestion/provenance** identity: it is the *governed
+LadybugBets identity of the upstream provider* (the feed/supplier), not a value
+the provider asserts about itself. If a provider also supplies its own internal
+identifiers for records or entities (e.g. a provider-native operator id, event
+id, or record id), those provider-native identifiers remain **source-asserted**
+and must not be silently substituted for LadybugBets canonical identifiers. No
+additional provider-resolution system is designed here.
+
 ## Canonical market observation
 
 The minimum canonical observation is described by the following conceptual
-fields. The **Dimension** column classifies each field per the four dimensions
-above. This is a conceptual model, not a schema; names are canonical concepts,
-not column definitions.
+fields. The **Dimension** column classifies each field into **exactly one** of
+the four dimensions — no field belongs to two. Where a raw source form and a
+canonical form may differ, they are represented as **separate conceptual
+values** (a `source_*` value and its canonical counterpart), rather than one
+field straddling two dimensions. This is a conceptual model, not a schema; names
+are canonical concepts, not column definitions, and listing a value does not
+require that every observation populate it.
 
 | Field | Dimension | Meaning |
 | --- | --- | --- |
 | `event_id` | Canonical/normalized | LadybugBets canonical identifier for the sporting event (an alignment key, not a verbatim source value). |
-| `sport` | Canonical/normalized (may retain raw) | Normalized sport (e.g. football/soccer); a source's raw label may be retained alongside. |
-| `competition` | Canonical/normalized (may retain raw) | Normalized competition/league (e.g. English Premier League); raw source label may be retained alongside. |
-| `start_time` | Source-asserted (normalizable) | Scheduled start time as asserted by the source; may be normalized (e.g. timezone) while retaining the raw form. |
-| `provider_id` | Ingestion/provenance | Identifier of the upstream governed data source/feed from which the record was obtained. |
-| `operator_id` | Source-asserted | Identifier of the bookmaker/market operator to which the quoted price is attributed. |
-| `operator_display_name` | Source-asserted (optional) | Human-readable name of the quoted operator, kept separately from its identifier. |
-| `market` | Canonical/normalized (may retain raw) | Normalized market being priced (e.g. match result); raw source label may be retained alongside. |
-| `outcome` | Canonical/normalized (may retain raw) | Normalized outcome within the market; raw source label may be retained alongside. |
+| `source_sport_label` | Source-asserted | Sport label exactly as provided by the source, when available. |
+| `sport` | Canonical/normalized | LadybugBets canonical sport (e.g. football/soccer). |
+| `source_competition_label` | Source-asserted | Competition/league label exactly as provided by the source, when available. |
+| `competition` | Canonical/normalized | LadybugBets canonical competition/league (e.g. English Premier League). |
+| `source_start_time` | Source-asserted | Scheduled start time exactly as asserted by the source, including its stated offset/timezone. |
+| `start_time` | Canonical/normalized | A lossless canonical representation of the **same asserted instant** (e.g. normalized to UTC) used for cross-source alignment — not an independently asserted different time. See [Start-time semantics](#start-time-semantics). |
+| `provider_id` | Ingestion/provenance | Governed LadybugBets identity of the upstream provider/feed the record was obtained from. |
+| `source_operator_id` | Source-asserted | Operator/bookmaker identifier supplied by the upstream provider, when available. |
+| `source_operator_name` | Source-asserted | Operator/bookmaker label supplied by the upstream provider, when available. |
+| `operator_id` | Canonical/normalized | LadybugBets canonical identity for the quoted bookmaker/operator. |
+| `operator_display_name` | Canonical/normalized | LadybugBets governed display label for that canonical operator. |
+| `source_market_label` | Source-asserted | Market label exactly as provided by the source, when available. |
+| `market` | Canonical/normalized | LadybugBets canonical market (e.g. match result). |
+| `source_outcome_label` | Source-asserted | Outcome label exactly as provided by the source, when available. |
+| `outcome` | Canonical/normalized | LadybugBets canonical outcome within the market. |
 | `price` | Source-asserted | The price as asserted by the source for this operator. |
 | `price_format` | Source-asserted | The format of `price` (decimal, American, fractional). |
-| `source_observed_at` | Source-asserted (may be absent) | Timestamp for when the quoted market state applied *according to the source*, when the source provides a trustworthy one. May be unavailable. |
+| `source_observed_at` | Source-asserted | Timestamp for when the quoted market state applied *according to the source*, when the source provides a trustworthy one. May be absent. |
 | `ingested_at` | Ingestion/provenance | Timestamp for when LadybugBets received or recorded the observation. |
-| `jurisdiction` | Canonical/normalized or source-asserted | Jurisdiction context; whether asserted by the source or normalized by LadybugBets must be recorded. |
+| `source_jurisdiction` | Source-asserted | Jurisdiction as asserted by the source, when supplied. |
+| `jurisdiction` | Canonical/normalized | LadybugBets canonical jurisdiction representation. |
 | `source_reference` | Ingestion/provenance | Reference back to the specific source record/feed the observation came from. |
+
+Note: the `source_*` label and identifier fields are source-asserted **evidence**
+of how a provider identifies an entity; their canonical counterparts
+(`event_id`, `sport`, `competition`, `operator_id`, `operator_display_name`,
+`market`, `outcome`, `jurisdiction`) are LadybugBets alignment constructs
+produced under the identity-normalization law above. Until identity resolution is
+governed (Sprint 1), a canonical counterpart may be unresolved; a raw label must
+not be promoted to canonical by assumption.
 
 Time semantics for `source_observed_at` and `ingested_at` are defined in
 [Time semantics](#time-semantics) below.
@@ -86,17 +141,20 @@ were source facts.**
 ### Source-asserted values
 
 Facts actually asserted by a governed data source (for example `price`,
-`price_format`, the quoted `operator_id`). These are recorded as received and
-attributed to their source. Membership in a dimension is per field, as marked in
-the table above — the table is not uniformly "source observations".
+`price_format`, `source_operator_id`, `source_operator_name`, and the other
+`source_*` labels and timestamps). These are recorded as received and attributed
+to their source. Membership in a dimension is per field, as marked in the table
+above — the table is not uniformly "source observations".
 
 ### Canonical / normalized values
 
 LadybugBets identifiers or normalized representations (for example `event_id`,
-and the normalized forms of `sport`, `competition`, `market`, `outcome`, and,
-where applicable, `jurisdiction`). If LadybugBets normalizes any of these, that
-normalization **must not be silently represented as a raw source fact**. Where
-useful, a raw source-asserted form may be retained alongside the canonical form.
+`operator_id`, `operator_display_name`, and the canonical forms of `sport`,
+`competition`, `market`, `outcome`, `start_time`, and `jurisdiction`). These are
+LadybugBets alignment constructs produced under the identity-normalization law.
+A canonical value **must not be silently represented as a raw source fact**, and
+its corresponding raw source form is retained as a separate `source_*` value
+rather than merged into it.
 
 ### Derived fields
 
@@ -140,12 +198,44 @@ depend on temporal comparability. The closing-price policy is **not** ratified
 by this amendment; **DEC-011 remains Deferred** (see
 [../DECISION_LOG.md](../DECISION_LOG.md)).
 
+## Start-time semantics
+
+The event's scheduled start time is modeled as two distinct values:
+
+- **`source_start_time` — source-asserted.** The scheduled start time exactly as
+  the source asserts it, including the offset/timezone the source states.
+- **`start_time` — canonical/normalized.** A **lossless** canonical
+  representation of the *same asserted instant* (for example, normalized to a
+  single reference timezone) used for cross-source alignment.
+
+Because the canonical form is a representation of the same instant, LadybugBets
+does **not** thereby assert a different event time; timezone normalization is
+representational, not a new source fact. Where a source's scheduled start time
+genuinely differs from another source's, that is **conflicting source
+assertions**, not a normalization artifact — and conflict resolution between
+differing source start times is **deferred to Sprint 1**.
+
+## Jurisdiction semantics
+
+Jurisdiction is likewise modeled as two distinct values rather than one
+ambiguous field:
+
+- **`source_jurisdiction` — source-asserted.** Jurisdiction as asserted by the
+  source, when supplied.
+- **`jurisdiction` — canonical/normalized.** LadybugBets canonical jurisdiction
+  representation.
+
+If jurisdiction is both supplied by a source and normalized by LadybugBets, the
+two forms are kept distinct. Jurisdiction-resolution rules are **not defined in
+Sprint 0**.
+
 ## Provenance requirements
 
 Every market observation must remain attributable to:
 
 - its **provider** (upstream data source/feed)
-- its **quoted operator/bookmaker**
+- its **quoted operator/bookmaker** — preserving both the raw source-asserted
+  operator identity/label and, where resolved, the canonical operator identity
 - its **time** (source-observed time where available, and ingestion time)
 - its **event**
 - its **market**

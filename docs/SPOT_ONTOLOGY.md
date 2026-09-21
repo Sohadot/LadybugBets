@@ -46,10 +46,14 @@ prediction, a profitable opportunity, or advice to wager.
   over time.
 - **Required inputs:** two or more comparable Price Spots with distinct
   timestamps. Comparability requires the same event, market, and outcome **and**
-  the same quoted bookmaker/operator basis — i.e. the observations must be
-  attributed to the same operator identity. Unless a later governed methodology
-  intentionally defines cross-operator movement, movement is defined within a
-  single operator's quoted prices.
+  the same **canonical** bookmaker/operator identity — i.e. the observations must
+  resolve to the same LadybugBets canonical operator (see
+  [DATA_MODEL.md](DATA_MODEL.md)). Raw provider-supplied operator labels alone do
+  not establish operator sameness. Until identity resolution is governed
+  (Sprint 1), sameness holds only where the observations already share the same
+  canonical operator identity. Unless a later governed methodology intentionally
+  defines cross-operator movement, movement is defined within a single canonical
+  operator's quoted prices.
 - **Derived outputs:** movement amount and/or direction between the observations
   (a derived calculation).
 - **What it means:** "For this operator's quoted price, between these observed
@@ -94,13 +98,17 @@ prediction, a profitable opportunity, or advice to wager.
 - **Purpose:** Provide a cross-operator representation of comparable market
   observations for the same outcome.
 - **Consensus population (MVP semantics):** Consensus is defined over multiple
-  comparable quotations attributed to **distinct governed bookmaker/operator
-  identities**, unless a future methodology explicitly defines another consensus
-  population. Upstream **provider** diversity is not the consensus population and
-  must not be equated with operator diversity (see the distinction below).
+  comparable quotations attributed to **distinct canonical LadybugBets
+  bookmaker/operator identities**, unless a future methodology explicitly defines
+  another consensus population. Upstream **provider** diversity is not the
+  consensus population and must not be equated with operator diversity (see the
+  distinction below). Every contributing observation still preserves its raw
+  provider/operator provenance (its `source_*` identity), even though the
+  consensus population is counted by canonical operator identity.
 - **Required inputs:** two or more comparable observations for the same event,
-  market, and outcome, attributed to **distinct bookmaker/operator identities**,
-  each with full provenance (provider and operator).
+  market, and outcome, attributed to **distinct canonical operator identities**,
+  each retaining full provenance (provider plus raw source-asserted operator
+  identity/label as well as the canonical operator identity).
 - **Derived outputs:** a cross-operator representation (e.g. range, spread across
   operators, or an explicitly defined aggregate) — always labeled as derived.
 - **What it means:** "Across these named operators, the observed prices for this
@@ -116,17 +124,23 @@ prediction, a profitable opportunity, or advice to wager.
   does require multiple distinct operators.
 
 **Provider diversity ≠ bookmaker diversity.** Upstream data providers and quoted
-bookmakers are different dimensions (see [DATA_MODEL.md](DATA_MODEL.md)):
+bookmakers are different dimensions, and raw source labels are not canonical
+operator identities (see [DATA_MODEL.md](DATA_MODEL.md)):
 
 - Provider A → Bookmaker X and Provider A → Bookmaker Y are **two distinct
   bookmaker observations**, even though both arrived through a single provider.
 - Provider A → Bookmaker X and Provider B → Bookmaker X must **not** be treated
   as two independent bookmaker opinions merely because two feeds delivered the
   same bookmaker's quotation.
+- Conversely, `Provider A → source label X` and `Provider B → source label Y`
+  may ultimately resolve to the **same** canonical operator. Until identity
+  resolution is governed, two differing raw labels must **not** automatically be
+  treated as two independent operators.
 
-Any deduplication, conflict-resolution, freshness, or provider-precedence rule
-(for the second case above and others) is **deferred to Sprint 1 governance**.
-No independence-scoring system is defined or implied here.
+Any identity resolution, deduplication, conflict-resolution, freshness, or
+provider-precedence rule (for the cases above and others) is **deferred to
+Sprint 1 governance**. No resolution algorithm and no independence-scoring
+system is defined or implied here.
 
 ---
 
