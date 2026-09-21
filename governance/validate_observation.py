@@ -2,8 +2,8 @@
 
 Standard library only. This is a **contract validator**, not a production
 ingestion engine. Given an already-parsed candidate envelope (a dict), it
-returns deterministic findings describing every way the envelope violates the
-admission invariants for its own declared `governance.admission_state`.
+reports every way the envelope is *inconsistent with its own declared*
+`governance.admission_state` and reason codes.
 
 It MUST NOT (and does not):
 
@@ -12,15 +12,26 @@ It MUST NOT (and does not):
 - mutate the record,
 - publish anything.
 
-The governed laws it enforces are defined in:
+Two clearly separated notions:
+
+- **Contract consistency** (`is_contract_consistent`) — the declared state and
+  reasons correctly describe the candidate. This can legitimately be True for
+  ADMITTED, QUARANTINED, *or* REJECTED.
+- **Admission** (`is_admitted`) — contract-consistent AND declared ADMITTED. A
+  QUARANTINED or REJECTED candidate is never admitted.
+
+Machine-detectable defects are detected independently of the declared state
+(`detect_machine_conditions`), using the governed reason-code vocabulary. The
+validator does NOT reconstruct identity-resolution outcomes: a declared
+`UNRESOLVED_*`/`AMBIGUOUS_*` identity reason is governed evidence from the
+resolution layer, and the validator only checks that the corresponding canonical
+identity stays null.
+
+The governed laws are defined in:
 - docs/OBSERVATION_CONTRACT.md   (LBOC-001)
 - docs/IDENTITY_RESOLUTION.md    (LBIR-001)
 - docs/TEMPORAL_GOVERNANCE.md
 - docs/METHODOLOGY.md            (price validity basis)
-
-The controlled vocabularies below are the single source of truth for the
-repository-local gate; tests assert that the JSON Schema contracts declare the
-same vocabularies so the two encodings cannot silently drift.
 """
 
 import re
@@ -31,7 +42,12 @@ ADMISSION_STATES = ("ADMITTED", "QUARANTINED", "REJECTED")
 
 VALID_PRICE_FORMATS = ("decimal", "american", "fractional")
 
-# Complete, symmetric identity reason-code vocabulary plus non-identity codes.
+# The currently governed match-event profile is football/soccer (MVP scope,
+# DEC-006). A football match event is participant-bearing (DEC-017) with exactly
+# the roles home and away. This is NOT a universal law for every future sport.
+FOOTBALL_MATCH_SPORT = "football"
+MATCH_EVENT_ROLES = ("home", "away")
+
 IDENTITY_ENTITIES = (
     "sport",
     "competition",
@@ -43,20 +59,33 @@ IDENTITY_ENTITIES = (
     "jurisdiction",
 )
 
-REASON_CODES = tuple(
+_IDENTITY_REASON_CODES = tuple(
     ["UNRESOLVED_%s_IDENTITY" % e.upper() for e in IDENTITY_ENTITIES]
     + ["AMBIGUOUS_%s_IDENTITY" % e.upper() for e in IDENTITY_ENTITIES]
-    + [
-        "MISSING_REQUIRED_SOURCE_FIELD",
-        "MISSING_SOURCE_LOCATOR",
-        "INVALID_PRICE",
-        "INVALID_PRICE_FORMAT",
-        "MISSING_PROVIDER_PROVENANCE",
-        "TEMPORAL_AMBIGUITY",
-        "CONFLICTING_SOURCE_ASSERTIONS",
-        "INVALID_CONTRACT_VERSION",
-    ]
 )
+
+# Machine-detectable defects. These are objectively derivable from the envelope
+# WITHOUT performing identity resolution. They are all rejection-class: a
+# candidate exhibiting any of them cannot enter governed analytical use as-is.
+MACHINE_DETECTABLE_CODES = (
+    "INVALID_CONTRACT_VERSION",
+    "MISSING_PROVIDER_PROVENANCE",
+    "MISSING_SOURCE_LOCATOR",
+    "MISSING_REQUIRED_SOURCE_FIELD",
+    "INVALID_PRICE_FORMAT",
+    "INVALID_PRICE",
+)
+REJECTION_CLASS_CODES = MACHINE_DETECTABLE_CODES
+
+# Quarantine-class: identity uncertainty/ambiguity and governed conflicts that
+# may be resolvable without treating the source candidate as structurally
+# invalid. These are DECLARED governed outcomes, never machine-reconstructed.
+QUARANTINE_CLASS_CODES = tuple(
+    list(_IDENTITY_REASON_CODES) + ["TEMPORAL_AMBIGUITY", "CONFLICTING_SOURCE_ASSERTIONS"]
+)
+
+REASON_CODES = tuple(list(_IDENTITY_REASON_CODES) + list(MACHINE_DETECTABLE_CODES)
+                     + ["TEMPORAL_AMBIGUITY", "CONFLICTING_SOURCE_ASSERTIONS"])
 
 # Reason code -> the canonical field that MUST remain unresolved (null) when the
 # code is present. Participant identity is handled separately (a list).
@@ -84,8 +113,7 @@ PARTICIPANT_UNRESOLVED_CODES = (
 # Core canonical identities a governed Price observation must carry to be ADMITTED.
 CORE_ADMITTED_CANONICAL = ("event_id", "operator_id", "market_id", "outcome_id")
 
-# Raw source id -> canonical id pairs that must never be identical (no raw id
-# silently promoted to canonical).
+# Raw source id -> canonical id pairs that must never be identical.
 RAW_CANONICAL_ID_PAIRS = (
     ("source_event_id", "event_id"),
     ("source_operator_id", "operator_id"),
@@ -94,7 +122,6 @@ RAW_CANONICAL_ID_PAIRS = (
     ("source_competition_id", "competition_id"),
 )
 
-# Derived-analysis keys that must never appear inside a source observation.
 FORBIDDEN_DERIVED_KEYS = frozenset(
     {
         "implied_probability",
@@ -115,7 +142,7 @@ FORBIDDEN_DERIVED_KEYS = frozenset(
 
 
 class Finding(object):
-    """A single deterministic contract violation."""
+    """A single deterministic contract-consistency violation."""
 
     __slots__ = ("code", "message")
 
@@ -177,6 +204,48 @@ def price_is_valid(price, price_format):
     return False
 
 
+def detect_machine_conditions(envelope):
+    """Return the set of governed reason codes for machine-provable defects.
+
+    Independent of the declared admission_state. Uses ONLY objectively derivable
+    facts; it never infers identity-resolution outcomes (a null canonical field
+    does not tell us whether identity was unresolved, ambiguous, not applicable,
+    or simply not yet run). All codes returned are rejection-class.
+    """
+    detected = set()
+    if not isinstance(envelope, dict):
+        return detected
+    contract = envelope.get("contract") or {}
+    provenance = envelope.get("provenance") or {}
+    source = envelope.get("source_asserted") or {}
+
+    version = contract.get("contract_version")
+    if _is_nonempty_str(version) and version != SUPPORTED_CONTRACT_VERSION:
+        detected.add("INVALID_CONTRACT_VERSION")
+
+    if not _is_nonempty_str(provenance.get("provider_id")):
+        detected.add("MISSING_PROVIDER_PROVENANCE")
+
+    if not (
+        _is_nonempty_str(provenance.get("source_reference"))
+        or _is_nonempty_str(provenance.get("source_record_id"))
+    ):
+        detected.add("MISSING_SOURCE_LOCATOR")
+
+    has_price = "price" in source
+    has_format = "price_format" in source
+    if not has_price or not has_format:
+        detected.add("MISSING_REQUIRED_SOURCE_FIELD")
+    if has_format:
+        price_format = source.get("price_format")
+        if price_format not in VALID_PRICE_FORMATS:
+            detected.add("INVALID_PRICE_FORMAT")
+        elif has_price and not price_is_valid(source.get("price"), price_format):
+            detected.add("INVALID_PRICE")
+
+    return detected
+
+
 def _walk_keys(obj):
     if isinstance(obj, dict):
         for key, value in obj.items():
@@ -189,25 +258,32 @@ def _walk_keys(obj):
                 yield nested
 
 
+def _resolved_participants(canonical):
+    return [
+        p
+        for p in (canonical.get("participants", []) or [])
+        if isinstance(p, dict)
+        and _is_nonempty_str(p.get("participant_id"))
+        and _is_nonempty_str(p.get("role"))
+    ]
+
+
 def validate_observation(envelope):
-    """Return a list of Finding objects for one candidate envelope.
+    """Return a list of Finding objects (contract-consistency violations).
 
     An empty list means the envelope is internally consistent with the
-    admission invariants for its own declared admission_state. This function
-    never raises for a well-typed dict; structural problems are returned as
-    findings.
+    admission invariants for its own declared admission_state. Never raises for
+    a well-typed dict; structural problems are returned as findings.
     """
     findings = []
 
     if not isinstance(envelope, dict):
         return [Finding("MALFORMED_ENVELOPE", "envelope is not an object")]
 
-    # --- Structural sections -------------------------------------------------
     for section in ("contract", "provenance", "source_asserted", "canonical", "governance"):
         if not isinstance(envelope.get(section), dict):
             findings.append(Finding("MISSING_SECTION", "missing/!object section: %s" % section))
     if findings:
-        # Without the sections we cannot check the rest meaningfully.
         return findings
 
     contract = envelope["contract"]
@@ -225,7 +301,6 @@ def validate_observation(envelope):
     if state not in ADMISSION_STATES:
         findings.append(Finding("STATE_INVALID", "unknown admission_state %r" % state))
 
-    # --- Reason codes / state consistency ------------------------------------
     reason_codes = governance.get("reason_codes", []) or []
     if not isinstance(reason_codes, list):
         findings.append(Finding("REASON_CODES_MALFORMED", "reason_codes must be a list"))
@@ -240,17 +315,40 @@ def validate_observation(envelope):
             Finding("REASON_STATE_INCONSISTENT", "%s requires >=1 reason code" % state)
         )
 
+    # --- Machine-detected defects vs. declared reasons -----------------------
+    detected = detect_machine_conditions(envelope)
+
+    # (a) Truthfulness: a declared machine-detectable rejection reason must be
+    #     backed by an actual detected defect. (Identity/temporal/conflict
+    #     reasons are governed declarations and are NOT required to be detected.)
+    for code in reason_codes:
+        if code in MACHINE_DETECTABLE_CODES and code not in detected:
+            findings.append(
+                Finding(
+                    "REASON_EVIDENCE_MISSING",
+                    "declared %s is not supported by a detected defect" % code,
+                )
+            )
+
+    # (b) Fail closed: a real rejection-class defect cannot be ADMITTED or
+    #     QUARANTINED. Report each detected condition using its governed code.
+    if state in ("ADMITTED", "QUARANTINED"):
+        for code in sorted(detected):
+            findings.append(
+                Finding(code, "detected %s; a %s candidate must be REJECTED" % (code, state))
+            )
+
     # --- Universal laws (all states) -----------------------------------------
     for key in _walk_keys(envelope):
         if isinstance(key, str) and key.lower() in FORBIDDEN_DERIVED_KEYS:
             findings.append(Finding("DERIVED_FIELD_PRESENT", "derived field in envelope: %s" % key))
 
-    ingested_at = provenance.get("ingested_at")
-    observed_at = source.get("source_observed_at")
-    if observed_at is not None and ingested_at is not None and observed_at == ingested_at:
-        findings.append(
-            Finding("INGESTED_USED_AS_OBSERVED", "ingested_at equals source_observed_at")
-        )
+    # NOTE (DEC-020 / temporal semantics): source_observed_at and ingested_at are
+    # distinct semantic fields, but they MAY legitimately hold the same value.
+    # Numerical equality does not prove that ingestion time was used as a source
+    # quote time, so equality is NOT a violation. The structural separation of
+    # the two fields is preserved by the envelope shape, and a missing
+    # source_observed_at stays missing (never substituted).
 
     for source_key, canonical_key in RAW_CANONICAL_ID_PAIRS:
         source_value = source.get(source_key)
@@ -277,7 +375,9 @@ def validate_observation(envelope):
             Finding("RAW_ID_PROMOTED", "raw participant id reused as canonical participant id")
         )
 
-    # Unresolved/ambiguous identity reasons must leave the canonical field null.
+    # Declared unresolved/ambiguous identity reasons must leave the canonical
+    # field null. (The validator does not perform resolution; it only checks the
+    # null invariant against the governed declaration.)
     for code in reason_codes:
         field = UNRESOLVED_CANONICAL_FIELD.get(code)
         if field is not None and canonical.get(field) is not None:
@@ -298,43 +398,7 @@ def validate_observation(envelope):
                 )
                 break
 
-    # --- Stronger invariants for ADMITTED and QUARANTINED --------------------
-    if state in ("ADMITTED", "QUARANTINED"):
-        if contract.get("contract_version") != SUPPORTED_CONTRACT_VERSION:
-            findings.append(
-                Finding(
-                    "UNSUPPORTED_CONTRACT_VERSION",
-                    "%s requires contract_version %s" % (state, SUPPORTED_CONTRACT_VERSION),
-                )
-            )
-        if not _is_nonempty_str(provenance.get("provider_id")):
-            findings.append(
-                Finding("MISSING_PROVIDER_ID", "%s requires governed provider_id" % state)
-            )
-        if not (
-            _is_nonempty_str(provenance.get("source_reference"))
-            or _is_nonempty_str(provenance.get("source_record_id"))
-        ):
-            findings.append(
-                Finding(
-                    "MISSING_SOURCE_LOCATOR",
-                    "%s requires source_reference or source_record_id" % state,
-                )
-            )
-        price_format = source.get("price_format")
-        if price_format not in VALID_PRICE_FORMATS:
-            findings.append(
-                Finding("PRICE_FORMAT_UNSUPPORTED", "unsupported price_format %r" % price_format)
-            )
-        elif not price_is_valid(source.get("price"), price_format):
-            findings.append(
-                Finding(
-                    "PRICE_INVALID",
-                    "price %r invalid for format %r" % (source.get("price"), price_format),
-                )
-            )
-
-    # --- Strongest invariants for ADMITTED -----------------------------------
+    # --- ADMITTED admission tier ---------------------------------------------
     if state == "ADMITTED":
         for field in CORE_ADMITTED_CANONICAL:
             if not _is_nonempty_str(canonical.get(field)):
@@ -344,30 +408,82 @@ def validate_observation(envelope):
                         "ADMITTED requires canonical.%s" % field,
                     )
                 )
-        # DEC-017: participant-bearing event identity. An ADMITTED event must
-        # carry at least one resolved canonical participant with a role.
-        participants = canonical.get("participants", []) or []
-        resolved = [
-            p
-            for p in participants
-            if isinstance(p, dict)
-            and _is_nonempty_str(p.get("participant_id"))
-            and _is_nonempty_str(p.get("role"))
-        ]
-        if not resolved:
-            findings.append(
-                Finding(
-                    "MISSING_PARTICIPANT_IDENTITY",
-                    "ADMITTED event requires resolved canonical participants (DEC-017)",
-                )
-            )
+        findings.extend(_admitted_participant_findings(canonical))
 
     return findings
 
 
-def is_admissible(envelope):
-    """True when the envelope satisfies the invariants for its declared state."""
+def _admitted_participant_findings(canonical):
+    """Participant-bearing event identity for ADMITTED records (DEC-017).
+
+    For the governed football/soccer match-event profile (MVP scope, DEC-006):
+    require a resolved canonical `home` participant and a resolved canonical
+    `away` participant, with distinct participant_ids and no duplicated role.
+    For any other sport (out of current MVP scope), fall back to the DEC-017
+    baseline of at least one resolved canonical participant.
+    """
+    findings = []
+    resolved = _resolved_participants(canonical)
+    sport = canonical.get("sport")
+
+    if sport == FOOTBALL_MATCH_SPORT:
+        by_role = {}
+        for participant in resolved:
+            by_role.setdefault(participant["role"], []).append(participant)
+        for role in MATCH_EVENT_ROLES:
+            if role not in by_role:
+                findings.append(
+                    Finding(
+                        "MISSING_PARTICIPANT_IDENTITY",
+                        "ADMITTED football event requires a resolved '%s' participant" % role,
+                    )
+                )
+            elif len(by_role[role]) > 1:
+                findings.append(
+                    Finding(
+                        "DUPLICATE_PARTICIPANT_ROLE",
+                        "ADMITTED football event has multiple '%s' participants" % role,
+                    )
+                )
+        home = by_role.get("home")
+        away = by_role.get("away")
+        if home and away and home[0]["participant_id"] == away[0]["participant_id"]:
+            findings.append(
+                Finding(
+                    "NON_DISTINCT_PARTICIPANTS",
+                    "ADMITTED football event home and away share a participant_id",
+                )
+            )
+    else:
+        if not resolved:
+            findings.append(
+                Finding(
+                    "MISSING_PARTICIPANT_IDENTITY",
+                    "ADMITTED event requires >=1 resolved canonical participant (DEC-017)",
+                )
+            )
+    return findings
+
+
+def is_contract_consistent(envelope):
+    """True when the declared state and reasons correctly describe the candidate.
+
+    May legitimately be True for ADMITTED, QUARANTINED, or REJECTED.
+    """
     return not validate_observation(envelope)
+
+
+def is_admitted(envelope):
+    """True ONLY for a contract-consistent envelope whose declared state is ADMITTED.
+
+    Never True for a QUARANTINED or REJECTED candidate.
+    """
+    if not isinstance(envelope, dict):
+        return False
+    governance = envelope.get("governance")
+    if not isinstance(governance, dict) or governance.get("admission_state") != "ADMITTED":
+        return False
+    return is_contract_consistent(envelope)
 
 
 def finding_codes(envelope):

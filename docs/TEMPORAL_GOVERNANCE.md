@@ -20,6 +20,31 @@ distinction and adds the rules needed before temporal analysis may proceed.
 distinct and are never conflated. `ingested_at` is **not** the bookmaker's quote
 time.
 
+### Semantic distinction is not numerical inequality
+
+`source_observed_at` and `ingested_at` are **distinct semantic fields, but they
+may legitimately hold the same timestamp value** (for example, a feed that
+stamps a quote at the instant LadybugBets receives it). Equality of the two
+values is therefore **not** a violation, and the contract validator does not flag
+it.
+
+The prohibited act is a **provenance** error: using ingestion time *as though it
+were a source-asserted quote time when the source did not actually provide one*.
+That is a fact about provenance, and it **cannot be inferred from equality
+alone** — two equal timestamps do not reveal whether the source asserted the
+observation time or not. Accordingly:
+
+- The structural separation of the two fields is preserved (they are never
+  merged into one field).
+- A missing `source_observed_at` stays missing — it is never back-filled from
+  `ingested_at`.
+- No timestamp is fabricated to manufacture apparent independence.
+
+If a future need arises to prove, by machine, that a source genuinely asserted an
+observation time, that will be handled by an explicit **timestamp
+evidence/basis** field (deferred), not by inferring provenance from value
+equality or inequality.
+
 ## Price observation
 
 A Price Spot-compatible source observation **MAY** be structurally **ADMITTED**

@@ -304,20 +304,60 @@ section is authoritative about which layer enforces which invariant.
   enforces, for `ADMITTED`/`QUARANTINED`: supported `contract_version` (`1.0.0`),
   non-empty `provider_id`, at least one source locator, and a supported
   `price_format`; and for `ADMITTED`: non-null core canonical identities
-  (`event_id`, `operator_id`, `market_id`, `outcome_id`) and at least one
-  resolved canonical participant with a role (DEC-017). It also carries the
-  controlled vocabularies (admission states, reason codes, supported price
-  formats) as `$defs` enums.
+  (`event_id`, `operator_id`, `market_id`, `outcome_id`), at least one resolved
+  canonical participant with a role (DEC-017), and — for `ADMITTED` +
+  `sport: football` — the presence of resolved `home` and `away` participants. It
+  also carries the controlled vocabularies (admission states, reason codes,
+  supported price formats) as `$defs` enums.
 - **Standard-library validator**
   ([`governance/validate_observation.py`](../governance/validate_observation.py))
   enforces everything the schema does **plus** the invariants that generic JSON
-  Schema cannot express cleanly: format-aware **price value** validity, the
-  `ingested_at ≠ source_observed_at` non-conflation rule, the raw-id-never-
-  promoted-to-canonical rule, the unresolved/ambiguous → canonical-null rule
-  across the full identity vocabulary, and the absence of derived-analysis
-  fields. It parses an already-loaded candidate and returns deterministic
-  findings; it does not call APIs, read a database, resolve identities, generate
-  canonical identity, mutate the record, or publish.
+  Schema cannot express cleanly: format-aware **price value** validity;
+  **reason-evidence truthfulness** and **fail-closed** behaviour (below); the
+  football home/away **participant distinctness** and **no-duplicate-role** rule;
+  the raw-id-never-promoted-to-canonical rule; the declared unresolved/ambiguous
+  → canonical-null rule across the full identity vocabulary; and the absence of
+  derived-analysis fields. It parses an already-loaded candidate and returns
+  deterministic findings; it does not call APIs, read a database, resolve
+  identities, generate canonical identity, mutate the record, or publish.
+
+  The validator distinguishes two public notions:
+  **`is_contract_consistent(env)`** — the declared state and reasons correctly
+  describe the candidate (legitimately True for ADMITTED, QUARANTINED, *or*
+  REJECTED) — and **`is_admitted(env)`** — contract-consistent **and** declared
+  ADMITTED. A QUARANTINED or REJECTED candidate is never `is_admitted`. (There is
+  no `is_admissible`; that ambiguous name was removed pre-PR.)
+
+  **Detected conditions vs. declared state.** `detect_machine_conditions(env)`
+  returns the governed reason codes for **machine-provable, rejection-class**
+  defects (`INVALID_CONTRACT_VERSION`, `MISSING_PROVIDER_PROVENANCE`,
+  `MISSING_SOURCE_LOCATOR`, `MISSING_REQUIRED_SOURCE_FIELD`,
+  `INVALID_PRICE_FORMAT`, `INVALID_PRICE`) independently of the declared state. It
+  never infers an identity outcome (`UNRESOLVED_*`/`AMBIGUOUS_*`) from a null
+  canonical field — those remain **declared governed outcomes** from the
+  resolution layer, and the validator only checks their canonical-null invariant
+  (§8 of the contract; it does not reconstruct resolution).
+
+  Two consequences follow:
+  - **Reason-evidence truthfulness:** a declared machine-detectable rejection
+    reason must correspond to an actually detected defect; otherwise the envelope
+    is contract-inconsistent (`REASON_EVIDENCE_MISSING`). A valid candidate cannot
+    become a "valid rejection" by attaching an arbitrary rejection reason.
+  - **Fail closed:** if any machine-detectable rejection-class defect is present,
+    the candidate must be `REJECTED` — it may not be `ADMITTED` or `QUARANTINED`.
+
+### Football match-event participant profile (ADMITTED)
+
+Under the current MVP scope (football/soccer, DEC-006) an ADMITTED observation is
+a participant-bearing football **match event** (DEC-017): it must carry a resolved
+canonical **`home`** participant and a resolved canonical **`away`** participant,
+with **distinct** `participant_id`s and **no duplicated role**. Raw participant
+ids alone never satisfy this. The JSON Schema requires the presence of resolved
+`home` and `away` participants for `ADMITTED` + `sport: football`; the id
+**distinctness** and no-duplicate-role checks live in the standard-library
+validator (comparing two array elements' ids is not expressed cleanly in portable
+JSON Schema). This is the governed football match-event profile, **not** a
+universal rule for every future sport.
 
 The Python standard library ships no full JSON Schema engine, so the repository
 gate does **not** claim JSON-Schema conformance from `json.loads()` alone. The

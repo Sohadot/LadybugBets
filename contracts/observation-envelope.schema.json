@@ -289,6 +289,56 @@
           }
         }
       }
+    },
+    {
+      "$comment": "ADMITTED football/soccer match-event profile (MVP scope, DEC-006/DEC-017): require a resolved canonical home participant AND a resolved canonical away participant. Distinct participant_ids and no duplicated role are enforced by the standard-library validator (governance/validate_observation.py), because comparing two array elements' ids is not expressed cleanly in portable JSON Schema.",
+      "if": {
+        "required": ["governance", "canonical"],
+        "properties": {
+          "governance": {
+            "required": ["admission_state"],
+            "properties": { "admission_state": { "const": "ADMITTED" } }
+          },
+          "canonical": {
+            "required": ["sport"],
+            "properties": { "sport": { "const": "football" } }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "canonical": {
+            "properties": {
+              "participants": {
+                "type": "array",
+                "minItems": 2,
+                "allOf": [
+                  {
+                    "contains": {
+                      "type": "object",
+                      "required": ["participant_id", "role"],
+                      "properties": {
+                        "participant_id": { "$ref": "#/$defs/nonempty_string" },
+                        "role": { "const": "home" }
+                      }
+                    }
+                  },
+                  {
+                    "contains": {
+                      "type": "object",
+                      "required": ["participant_id", "role"],
+                      "properties": {
+                        "participant_id": { "$ref": "#/$defs/nonempty_string" },
+                        "role": { "const": "away" }
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
     }
   ]
 }
