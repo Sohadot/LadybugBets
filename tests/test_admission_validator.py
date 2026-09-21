@@ -297,6 +297,96 @@ class DetectMachineConditionsTests(unittest.TestCase):
         self.assertEqual(detected, {"INVALID_CONTRACT_VERSION"})
 
 
+class StructuralParityTests(unittest.TestCase):
+    """The stdlib preflight blocks admission-critical structural violations so
+    is_admitted() can never disagree with the portable schema's required shape."""
+
+    def _assert_both_false(self, env):
+        self.assertFalse(gov.is_contract_consistent(env))
+        self.assertFalse(gov.is_admitted(env))
+
+    def test_valid_admitted_is_admitted(self):
+        env = _admitted()
+        self.assertTrue(gov.is_contract_consistent(env))
+        self.assertTrue(gov.is_admitted(env))
+
+    def test_regression_deleting_ingested_at_blocks_admission(self):
+        env = _admitted()
+        del env["provenance"]["ingested_at"]
+        self.assertIs(gov.is_admitted(env), False)
+
+    def test_admitted_missing_ingested_at(self):
+        env = _admitted()
+        del env["provenance"]["ingested_at"]
+        self._assert_both_false(env)
+
+    def test_admitted_null_ingested_at(self):
+        env = _admitted()
+        env["provenance"]["ingested_at"] = None
+        self._assert_both_false(env)
+
+    def test_admitted_empty_ingested_at(self):
+        env = _admitted()
+        env["provenance"]["ingested_at"] = ""
+        self._assert_both_false(env)
+
+    def test_admitted_missing_observation_id(self):
+        env = _admitted()
+        del env["contract"]["observation_id"]
+        self._assert_both_false(env)
+
+    def test_admitted_missing_price(self):
+        env = _admitted()
+        del env["source_asserted"]["price"]
+        self._assert_both_false(env)
+
+    def test_admitted_missing_price_format(self):
+        env = _admitted()
+        del env["source_asserted"]["price_format"]
+        self._assert_both_false(env)
+
+    def test_admitted_participants_not_array(self):
+        env = _admitted()
+        env["canonical"]["participants"] = "home,away"
+        self._assert_both_false(env)
+
+    def test_admitted_malformed_participant_object(self):
+        env = _admitted()
+        env["canonical"]["participants"] = ["not-an-object", {"participant_id": 5, "role": "home"}]
+        self._assert_both_false(env)
+
+    def test_admitted_missing_top_level_section(self):
+        env = _admitted()
+        del env["canonical"]
+        self._assert_both_false(env)
+
+    def test_admitted_unexpected_top_level_section(self):
+        env = _admitted()
+        env["surprise"] = {"x": 1}
+        self.assertFalse(gov.is_contract_consistent(env))
+        self.assertIn("UNEXPECTED_TOP_LEVEL_FIELD", gov.finding_codes(env))
+
+    def test_valid_rejected_fixtures_remain_representable(self):
+        for name in (
+            "01_invalid_price.json",
+            "02_missing_provider_provenance.json",
+            "03_unsupported_contract_version.json",
+            "04_invalid_price_format.json",
+        ):
+            env = _load("rejected", name)
+            self.assertTrue(
+                gov.is_contract_consistent(env), "%s should stay contract-consistent" % name
+            )
+            self.assertFalse(gov.is_admitted(env))
+
+    def test_structure_preflight_is_standalone(self):
+        env = _admitted()
+        self.assertEqual(gov.validate_envelope_structure(env), [])
+        del env["provenance"]["ingested_at"]
+        codes = {f.code for f in gov.validate_envelope_structure(env)}
+        self.assertIn("MISSING_INGESTED_AT", codes)
+
+
 class SourceRightsFailClosedTests(unittest.TestCase):
     def _publishable(self, profile):
         return profile.get("rights_matrix", {}).get("public_display") == "ALLOWED"

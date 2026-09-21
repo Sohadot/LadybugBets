@@ -20,6 +20,12 @@ Two clearly separated notions:
 - **Admission** (`is_admitted`) — contract-consistent AND declared ADMITTED. A
   QUARANTINED or REJECTED candidate is never admitted.
 
+An explicit LBOC-001 structural preflight (`validate_envelope_structure`) runs
+first and guarantees `is_admitted` cannot return True for an envelope whose
+admission-critical shape is broken (e.g. a missing `provenance.ingested_at`). It
+is hand-coded for LBOC-001 only — NOT a generic JSON Schema engine. The portable
+JSON Schema remains authoritative for the complete structural shape.
+
 Machine-detectable defects are detected independently of the declared state
 (`detect_machine_conditions`), using the governed reason-code vocabulary. The
 validator does NOT reconstruct identity-resolution outcomes: a declared
@@ -39,6 +45,23 @@ import re
 SUPPORTED_CONTRACT_VERSION = "1.0.0"
 
 ADMISSION_STATES = ("ADMITTED", "QUARANTINED", "REJECTED")
+
+# The five governed top-level sections of an LBOC-001 envelope, in order.
+EXPECTED_SECTIONS = ("contract", "provenance", "source_asserted", "canonical", "governance")
+
+# Admission-critical fields whose KEY must exist in the envelope shape, per
+# section (values may still be null where the contract allows, e.g. provider_id
+# for a REJECTED candidate). These mirror the portable JSON Schema `required`
+# lists; a drift test asserts each appears as a declared schema property.
+ADMISSION_CRITICAL_FIELDS = {
+    "contract": ("contract_version", "observation_id"),
+    "provenance": ("provider_id", "ingested_at"),
+    "source_asserted": ("price", "price_format"),
+    "governance": ("admission_state",),
+}
+
+# Canonical fields the schema requires for an ADMITTED envelope.
+ADMITTED_CANONICAL_REQUIRED = ("event_id", "operator_id", "market_id", "outcome_id", "participants")
 
 VALID_PRICE_FORMATS = ("decimal", "american", "fractional")
 
@@ -268,34 +291,137 @@ def _resolved_participants(canonical):
     ]
 
 
+def validate_envelope_structure(envelope):
+    """Explicit LBOC-001 structural preflight (NOT a generic JSON Schema engine).
+
+    Enforces only the admission-critical structural subset that guarantees
+    ``is_admitted()`` cannot return True for an envelope whose shape violates the
+    core LBOC-001 contract. The portable JSON Schema remains authoritative for
+    the *complete* structural shape (including full ``additionalProperties:
+    false`` coverage); this function hand-codes the subset that matters for safe
+    admission and for representing rejections.
+
+    Returns a list of Finding objects (empty when the structure is sound). It
+    never fabricates values and never substitutes one field for another.
+    """
+    if not isinstance(envelope, dict):
+        return [Finding("MALFORMED_ENVELOPE", "envelope is not an object")]
+
+    findings = []
+
+    # Exactly the five governed sections, each an object; no extra top-level keys
+    # (the portable schema uses additionalProperties: false).
+    for section in EXPECTED_SECTIONS:
+        if section not in envelope:
+            findings.append(Finding("MISSING_SECTION", "missing section: %s" % section))
+        elif not isinstance(envelope[section], dict):
+            findings.append(Finding("MALFORMED_SECTION", "section not an object: %s" % section))
+    for extra in sorted(set(envelope.keys()) - set(EXPECTED_SECTIONS)):
+        findings.append(
+            Finding("UNEXPECTED_TOP_LEVEL_FIELD", "unexpected top-level field: %s" % extra)
+        )
+
+    def _section(name):
+        value = envelope.get(name)
+        return value if isinstance(value, dict) else {}
+
+    contract = _section("contract")
+    provenance = _section("provenance")
+    source = _section("source_asserted")
+    canonical = _section("canonical")
+    governance = _section("governance")
+    state = governance.get("admission_state")
+
+    # contract: non-empty string identifiers (all states).
+    if not _is_nonempty_str(contract.get("contract_version")):
+        findings.append(
+            Finding("MISSING_CONTRACT_VERSION", "contract.contract_version required (non-empty string)")
+        )
+    if not _is_nonempty_str(contract.get("observation_id")):
+        findings.append(
+            Finding("MISSING_OBSERVATION_ID", "contract.observation_id required (non-empty string)")
+        )
+
+    # provenance: the fields belong to the shape (provider_id may be null for a
+    # REJECTED candidate); ingested_at must be a non-empty string to be ADMITTED
+    # or QUARANTINED.
+    if "provider_id" not in provenance:
+        findings.append(
+            Finding("MISSING_PROVIDER_FIELD", "provenance.provider_id field required (may be null)")
+        )
+    if "ingested_at" not in provenance:
+        findings.append(Finding("MISSING_INGESTED_AT", "provenance.ingested_at field required"))
+    if state in ("ADMITTED", "QUARANTINED") and not _is_nonempty_str(provenance.get("ingested_at")):
+        findings.append(
+            Finding("MISSING_INGESTED_AT", "%s requires a non-empty ingested_at" % state)
+        )
+
+    # source_asserted: required fields must be present (absence != invalid value).
+    for field in ("price", "price_format"):
+        if field not in source:
+            findings.append(
+                Finding("MISSING_REQUIRED_SOURCE_FIELD", "source_asserted.%s field required" % field)
+            )
+
+    # governance: admission_state field must exist.
+    if "admission_state" not in governance:
+        findings.append(Finding("MISSING_ADMISSION_STATE", "governance.admission_state required"))
+
+    # canonical.participants, when present, must be an array (any state).
+    if "participants" in canonical and not isinstance(canonical.get("participants"), list):
+        findings.append(Finding("PARTICIPANTS_NOT_ARRAY", "canonical.participants must be an array"))
+
+    # Admission-critical nested types for ADMITTED.
+    if state == "ADMITTED":
+        participants = canonical.get("participants")
+        if not isinstance(participants, list):
+            findings.append(
+                Finding("PARTICIPANTS_NOT_ARRAY", "ADMITTED canonical.participants must be an array")
+            )
+        else:
+            for participant in participants:
+                if not isinstance(participant, dict):
+                    findings.append(
+                        Finding("MALFORMED_PARTICIPANT", "ADMITTED participant must be an object")
+                    )
+                    continue
+                for key in ("participant_id", "role"):
+                    if key in participant and participant[key] is not None and not isinstance(
+                        participant[key], str
+                    ):
+                        findings.append(
+                            Finding(
+                                "MALFORMED_PARTICIPANT",
+                                "ADMITTED participant %s must be a string" % key,
+                            )
+                        )
+
+    return findings
+
+
 def validate_observation(envelope):
     """Return a list of Finding objects (contract-consistency violations).
 
     An empty list means the envelope is internally consistent with the
     admission invariants for its own declared admission_state. Never raises for
     a well-typed dict; structural problems are returned as findings.
+
+    The admission-critical structural preflight runs first; if it reports any
+    finding the envelope is not contract-consistent (so it can never be admitted)
+    and we return those findings directly, since the deeper semantic checks
+    assume a sound shape.
     """
+    structural = validate_envelope_structure(envelope)
+    if structural:
+        return structural
+
     findings = []
-
-    if not isinstance(envelope, dict):
-        return [Finding("MALFORMED_ENVELOPE", "envelope is not an object")]
-
-    for section in ("contract", "provenance", "source_asserted", "canonical", "governance"):
-        if not isinstance(envelope.get(section), dict):
-            findings.append(Finding("MISSING_SECTION", "missing/!object section: %s" % section))
-    if findings:
-        return findings
 
     contract = envelope["contract"]
     provenance = envelope["provenance"]
     source = envelope["source_asserted"]
     canonical = envelope["canonical"]
     governance = envelope["governance"]
-
-    if not _is_nonempty_str(contract.get("observation_id")):
-        findings.append(Finding("MISSING_OBSERVATION_ID", "contract.observation_id required"))
-    if not _is_nonempty_str(contract.get("contract_version")):
-        findings.append(Finding("MISSING_CONTRACT_VERSION", "contract.contract_version required"))
 
     state = governance.get("admission_state")
     if state not in ADMISSION_STATES:

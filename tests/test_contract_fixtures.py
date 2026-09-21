@@ -297,6 +297,27 @@ class SchemaValidatorDriftTests(unittest.TestCase):
         matrix_props = schema["properties"]["rights_matrix"]["properties"]
         self.assertEqual(set(matrix_props.keys()), RIGHTS_CAPABILITIES)
 
+    def test_admission_critical_fields_exist_in_schema(self):
+        """Every field the validator treats as admission-critical required must
+        exist as a declared property in the JSON Schema (drift guard only; this
+        does not evaluate the schema)."""
+        schema = self._schema("observation-envelope.schema.json")
+        section_props = schema["properties"]
+        for section, fields in gov.ADMISSION_CRITICAL_FIELDS.items():
+            props = section_props[section]["properties"]
+            for field in fields:
+                self.assertIn(field, props, "%s.%s missing from schema" % (section, field))
+        # ADMITTED canonical required fields appear in an ADMITTED conditional branch.
+        canonical_required_sets = []
+        for branch in schema.get("allOf", []):
+            canonical = branch.get("then", {}).get("properties", {}).get("canonical", {})
+            if "required" in canonical:
+                canonical_required_sets.append(set(canonical["required"]))
+        self.assertTrue(
+            any(set(gov.ADMITTED_CANONICAL_REQUIRED) <= req for req in canonical_required_sets),
+            "ADMITTED canonical required fields not represented in schema conditionals",
+        )
+
     def test_all_contract_schemas_declare_2020_12(self):
         for path in _iter_json_files(CONTRACTS_ROOT):
             data = _load_json(path)

@@ -300,26 +300,42 @@ The governance law is encoded in **two synchronized machine layers**, and this
 section is authoritative about which layer enforces which invariant.
 
 - **JSON Schema** ([`contracts/observation-envelope.schema.json`](../contracts/observation-envelope.schema.json))
-  is a portable, vendor-neutral contract. Using draft 2020-12 conditionals it
-  enforces, for `ADMITTED`/`QUARANTINED`: supported `contract_version` (`1.0.0`),
-  non-empty `provider_id`, at least one source locator, and a supported
-  `price_format`; and for `ADMITTED`: non-null core canonical identities
-  (`event_id`, `operator_id`, `market_id`, `outcome_id`), at least one resolved
-  canonical participant with a role (DEC-017), and — for `ADMITTED` +
-  `sport: football` — the presence of resolved `home` and `away` participants. It
-  also carries the controlled vocabularies (admission states, reason codes,
-  supported price formats) as `$defs` enums.
+  is the **complete portable structural contract**. It is authoritative for the
+  full structural shape, including complete `additionalProperties: false`
+  coverage and every field's type. Using draft 2020-12 conditionals it enforces,
+  for `ADMITTED`/`QUARANTINED`: supported `contract_version` (`1.0.0`), non-empty
+  `provider_id`, at least one source locator, and a supported `price_format`; and
+  for `ADMITTED`: non-null core canonical identities (`event_id`, `operator_id`,
+  `market_id`, `outcome_id`), at least one resolved canonical participant with a
+  role (DEC-017), and — for `ADMITTED` + `sport: football` — the presence of
+  resolved `home` and `away` participants. It also carries the controlled
+  vocabularies (admission states, reason codes, supported price formats) as
+  `$defs` enums.
 - **Standard-library validator**
   ([`governance/validate_observation.py`](../governance/validate_observation.py))
-  enforces everything the schema does **plus** the invariants that generic JSON
-  Schema cannot express cleanly: format-aware **price value** validity;
-  **reason-evidence truthfulness** and **fail-closed** behaviour (below); the
-  football home/away **participant distinctness** and **no-duplicate-role** rule;
-  the raw-id-never-promoted-to-canonical rule; the declared unresolved/ambiguous
-  → canonical-null rule across the full identity vocabulary; and the absence of
-  derived-analysis fields. It parses an already-loaded candidate and returns
-  deterministic findings; it does not call APIs, read a database, resolve
-  identities, generate canonical identity, mutate the record, or publish.
+  is the repository-local **semantic and admission-critical structural gate**. It
+  does **not** claim full JSON Schema conformance. It enforces the structural
+  subset required for *safe admission* — via an explicit LBOC-001 preflight
+  (`validate_envelope_structure`) covering the five governed top-level sections
+  (and no extra one), non-empty `contract_version`/`observation_id`, the presence
+  of `provider_id` and `ingested_at` (with a non-empty `ingested_at` required for
+  `ADMITTED`/`QUARANTINED`), the presence of `price`/`price_format`, the presence
+  of `admission_state`, and admission-critical nested types (`canonical`,
+  `participants` as an array of participant objects with string `participant_id`
+  and `role`) — **plus** the semantic invariants JSON Schema does not conveniently
+  express: format-aware **price value** validity; **reason-evidence truthfulness**
+  and **fail-closed** behaviour (below); the football home/away **participant
+  distinctness** and **no-duplicate-role** rule; the raw-id-never-promoted-to-
+  canonical rule; the declared unresolved/ambiguous → canonical-null rule across
+  the full identity vocabulary; and the absence of derived-analysis fields. It
+  parses an already-loaded candidate and returns deterministic findings; it does
+  not call APIs, read a database, resolve identities, generate canonical
+  identity, mutate the record, or publish.
+
+  **`is_admitted()` MUST NOT return True** unless every admission-critical
+  structural requirement enforced locally is satisfied *and* the declared state is
+  `ADMITTED`. In particular, an envelope missing `provenance.ingested_at` (a field
+  the portable schema requires) can never be `is_admitted`.
 
   The validator distinguishes two public notions:
   **`is_contract_consistent(env)`** — the declared state and reasons correctly
