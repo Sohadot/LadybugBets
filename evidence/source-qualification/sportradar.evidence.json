@@ -1,0 +1,73 @@
+{
+  "evidence_version": "1.0.0",
+  "provider_id": "PRV_SPORTRADAR",
+  "provider_name": "Sportradar",
+  "official_domains": ["sportradar.com"],
+  "checked_at": "2026-09-21",
+  "evidence_items": [
+    {
+      "evidence_id": "sr-football-coverage",
+      "provider_id": "PRV_SPORTRADAR",
+      "source_url": "https://developer.sportradar.com/soccer/reference/soccer-api-overview",
+      "source_title": "Soccer API Overview - Sportradar",
+      "source_type": "PRODUCT_DOCS",
+      "retrieved_at": "2026-09-21",
+      "source_effective_date": null,
+      "publisher_domain": "developer.sportradar.com",
+      "claim_key": "football_coverage",
+      "claim_summary": "Soccer API provides coverage across a global suite of men's and women's leagues, organized into coverage tiers.",
+      "technical_posture": "VERIFIED",
+      "rights_posture": null,
+      "excerpt": null,
+      "notes": "EPL-specific coverage was not separately confirmed from the accessible public pages (see epl_coverage = NOT_VERIFIED)."
+    },
+    {
+      "evidence_id": "sr-operator-level",
+      "provider_id": "PRV_SPORTRADAR",
+      "source_url": "https://developer.sportradar.com/odds/reference/intro",
+      "source_title": "Odds API Overview - Sportradar",
+      "source_type": "PRODUCT_DOCS",
+      "retrieved_at": "2026-09-21",
+      "source_effective_date": "2026-08-24",
+      "publisher_domain": "developer.sportradar.com",
+      "claim_key": "operator_level_prices",
+      "claim_summary": "Odds Comparison products provide access with 140+ bookmakers; Live and Futures odds reference top bookmakers, indicating operator-attributed prices.",
+      "technical_posture": "VERIFIED",
+      "rights_posture": null,
+      "excerpt": null,
+      "notes": "Operator-attributed at product level; the specific per-odd bookmaker identifier field was not confirmed on the accessible overview page."
+    },
+    {
+      "evidence_id": "sr-event-id",
+      "provider_id": "PRV_SPORTRADAR",
+      "source_url": "https://developer.sportradar.com/soccer/docs/soccer-ig-id-handling",
+      "source_title": "Soccer ID Handling - Sportradar",
+      "source_type": "PRODUCT_DOCS",
+      "retrieved_at": "2026-09-21",
+      "source_effective_date": null,
+      "publisher_domain": "developer.sportradar.com",
+      "claim_key": "stable_event_identifier",
+      "claim_summary": "Sportradar uses a stable sr_id scheme, e.g. sr:sport_event:51133377 for events and sr:competitor:4792 for competitors.",
+      "technical_posture": "VERIFIED",
+      "rights_posture": null,
+      "excerpt": null,
+      "notes": "Raw/source event identity; participant (competitor) identifiers exist."
+    },
+    {
+      "evidence_id": "sr-access-model",
+      "provider_id": "PRV_SPORTRADAR",
+      "source_url": "https://developer.sportradar.com/getting-started/docs/get-started",
+      "source_title": "Get Started - Sportradar",
+      "source_type": "PRODUCT_DOCS",
+      "retrieved_at": "2026-09-21",
+      "source_effective_date": null,
+      "publisher_domain": "developer.sportradar.com",
+      "claim_key": "access_model",
+      "claim_summary": "Sportradar APIs are a B2B service, not intended to be called directly from a client application; data-use rights are governed by a commercial agreement rather than public terms.",
+      "technical_posture": null,
+      "rights_posture": null,
+      "excerpt": null,
+      "notes": "Because rights are contract-based, no public evidence establishes ALLOWED rights; all rights recorded UNKNOWN and fail closed."
+    }
+  ]
+}

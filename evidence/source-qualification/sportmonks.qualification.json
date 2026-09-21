@@ -1,0 +1,89 @@
+{
+  "qualification_version": "1.0.0",
+  "provider_id": "PRV_SPORTMONKS",
+  "provider_name": "Sportmonks",
+  "checked_at": "2026-09-21",
+  "evidence_bundle": "evidence/source-qualification/sportmonks.evidence.json",
+  "official_domains": ["sportmonks.com"],
+  "technical_matrix": {
+    "football_coverage": "VERIFIED",
+    "epl_coverage": "VERIFIED",
+    "operator_level_prices": "VERIFIED",
+    "stable_event_identifier": "VERIFIED",
+    "operator_identifier_or_stable_label": "VERIFIED",
+    "market_identifier_or_stable_key": "VERIFIED",
+    "outcome_identifier_or_stable_key": "VERIFIED",
+    "source_observed_timestamp": "VERIFIED",
+    "historical_odds_access": "VERIFIED",
+    "documented_rate_limits": "NOT_VERIFIED"
+  },
+  "rights_matrix": {
+    "ingest_use": "ALLOWED",
+    "cache": "ALLOWED",
+    "retain_historical": "ALLOWED",
+    "derive_calculations": "ALLOWED",
+    "public_display": "UNKNOWN",
+    "redistribute_raw": "PROHIBITED",
+    "redistribute_derived": "UNKNOWN"
+  },
+  "attribution_requirement": "Attribution required for logos and profile photos to their owners; no general attribution clause for the odds data itself.",
+  "geographic_restrictions": null,
+  "pricing_access": "PUBLIC_PLAN",
+  "capabilities": {
+    "CURRENT_PRICE_OBSERVATION": {
+      "outcome": "QUALIFIED",
+      "evidence_ids": ["sm-epl-coverage", "sm-operator-level", "sm-operator-id", "sm-event-id", "sm-market-key", "sm-outcome-key", "sm-ingest-use"],
+      "notes": "Operator-level EPL prices with event/market/outcome identity and ingest rights."
+    },
+    "PUBLIC_SPOTBOARD": {
+      "outcome": "UNRESOLVED",
+      "evidence_ids": [],
+      "notes": "Public display of the odds data is not explicitly established by the public Terms; recorded UNKNOWN and failed closed."
+    },
+    "DERIVED_PROBABILITY_DISPLAY": {
+      "outcome": "UNRESOLVED",
+      "evidence_ids": ["sm-derive"],
+      "notes": "Deriving is permitted, but public display of derived output is gated on the unresolved public_display posture; failed closed."
+    },
+    "SOURCE_TIME_MARKET_MOVEMENT": {
+      "outcome": "QUALIFIED",
+      "evidence_ids": ["sm-source-time", "sm-operator-id", "sm-historical", "sm-retain"],
+      "notes": "Per-bookmaker update timestamp plus retention rights support internal source-time movement analysis."
+    },
+    "HISTORICAL_DATASET_RETENTION": {
+      "outcome": "QUALIFIED",
+      "evidence_ids": ["sm-retain", "sm-ingest-use"],
+      "notes": "Storage of pulled data is permitted. Note: the provider's own history window is limited to ~7 days post kick-off."
+    },
+    "RAW_DATA_REDISTRIBUTION": {
+      "outcome": "NOT_QUALIFIED",
+      "evidence_ids": ["sm-redistribute-raw"],
+      "notes": "Reselling the data as data is prohibited without approval."
+    }
+  },
+  "blockers": [
+    "Public display of the odds data is not explicitly permitted by the public Terms (public_display = UNKNOWN), which blocks PUBLIC_SPOTBOARD and derived public display until clarified.",
+    "Raw data redistribution is prohibited without written approval."
+  ],
+  "unresolved_questions": [
+    "Do the Terms permit public display of the odds data in a user-facing website/app? The Terms permit distribution/storage within a product and monetization of derived creations, but do not explicitly establish unrestricted public display of the odds data; recorded as UNKNOWN.",
+    "What are the documented API rate limits per plan for the odds feed? Not retrieved in this sprint (documented_rate_limits = NOT_VERIFIED).",
+    "The Terms page did not display an effective/last-updated date; revalidate before production use."
+  ],
+  "evidence_ids": [
+    "sm-football-coverage",
+    "sm-epl-coverage",
+    "sm-operator-level",
+    "sm-operator-id",
+    "sm-event-id",
+    "sm-market-key",
+    "sm-outcome-key",
+    "sm-source-time",
+    "sm-historical",
+    "sm-ingest-use",
+    "sm-cache",
+    "sm-retain",
+    "sm-derive",
+    "sm-redistribute-raw"
+  ]
+}

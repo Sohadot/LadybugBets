@@ -1,0 +1,79 @@
+{
+  "qualification_version": "1.0.0",
+  "provider_id": "PRV_SPORTRADAR",
+  "provider_name": "Sportradar",
+  "checked_at": "2026-09-21",
+  "evidence_bundle": "evidence/source-qualification/sportradar.evidence.json",
+  "official_domains": ["sportradar.com"],
+  "technical_matrix": {
+    "football_coverage": "VERIFIED",
+    "epl_coverage": "NOT_VERIFIED",
+    "operator_level_prices": "VERIFIED",
+    "stable_event_identifier": "VERIFIED",
+    "operator_identifier_or_stable_label": "NOT_VERIFIED",
+    "market_identifier_or_stable_key": "NOT_VERIFIED",
+    "outcome_identifier_or_stable_key": "NOT_VERIFIED",
+    "source_observed_timestamp": "NOT_VERIFIED",
+    "historical_odds_access": "NOT_VERIFIED",
+    "documented_rate_limits": "NOT_VERIFIED"
+  },
+  "rights_matrix": {
+    "ingest_use": "UNKNOWN",
+    "cache": "UNKNOWN",
+    "retain_historical": "UNKNOWN",
+    "derive_calculations": "UNKNOWN",
+    "public_display": "UNKNOWN",
+    "redistribute_raw": "UNKNOWN",
+    "redistribute_derived": "UNKNOWN"
+  },
+  "attribution_requirement": null,
+  "geographic_restrictions": null,
+  "pricing_access": "CONTACT_SALES",
+  "capabilities": {
+    "CURRENT_PRICE_OBSERVATION": {
+      "outcome": "UNRESOLVED",
+      "evidence_ids": ["sr-football-coverage", "sr-operator-level", "sr-event-id", "sr-access-model"],
+      "notes": "EPL, per-odd operator identifier, market/outcome keys not confirmed publicly, and ingest rights are contract-gated (UNKNOWN)."
+    },
+    "PUBLIC_SPOTBOARD": {
+      "outcome": "UNRESOLVED",
+      "evidence_ids": ["sr-access-model"],
+      "notes": "Public display rights not establishable from public evidence; base capability unresolved."
+    },
+    "DERIVED_PROBABILITY_DISPLAY": {
+      "outcome": "UNRESOLVED",
+      "evidence_ids": ["sr-access-model"],
+      "notes": "Derivation and derived-display rights are contract-gated (UNKNOWN)."
+    },
+    "SOURCE_TIME_MARKET_MOVEMENT": {
+      "outcome": "UNRESOLVED",
+      "evidence_ids": ["sr-access-model"],
+      "notes": "Source-observed timestamp semantics not confirmed publicly (NOT_VERIFIED)."
+    },
+    "HISTORICAL_DATASET_RETENTION": {
+      "outcome": "UNRESOLVED",
+      "evidence_ids": ["sr-access-model"],
+      "notes": "Retention rights are contract-gated (UNKNOWN)."
+    },
+    "RAW_DATA_REDISTRIBUTION": {
+      "outcome": "UNRESOLVED",
+      "evidence_ids": ["sr-access-model"],
+      "notes": "Redistribution rights are contract-gated (UNKNOWN)."
+    }
+  },
+  "blockers": [
+    "Data-use rights are governed by a commercial agreement, not public terms; no public evidence establishes any ALLOWED right (all rights UNKNOWN, fail closed).",
+    "EPL coverage and per-odd operator/market/outcome identifiers and timestamp semantics were not confirmed from accessible public documentation."
+  ],
+  "unresolved_questions": [
+    "Which specific bookmaker identifier, market key, and outcome key fields does the Odds Comparison API expose, and is EPL within the licensed coverage tier?",
+    "What timestamp does the Odds Comparison API document as the source-observed/quote-state time?",
+    "Which data-use rights (ingest, cache, retain, derive, public display, redistribute) does a commercial Sportradar agreement grant for operator-level odds? These require reviewing the actual licence, which is out of scope for this evidence-only sprint."
+  ],
+  "evidence_ids": [
+    "sr-football-coverage",
+    "sr-operator-level",
+    "sr-event-id",
+    "sr-access-model"
+  ]
+}
