@@ -30,11 +30,12 @@ regulatory status.
 
 ## Current project status
 
-**Pre-MVP / governed-contract stage.** This repository contains public
-foundational documentation and a vendor-neutral governance contract for source
-observations. No application code, database, data vendor, odds API, ingestion
-pipeline, or user-facing product has been built. It is **not** a live platform,
-a live odds product, or a production data system.
+**Pre-MVP.** This repository now contains: the public foundation, a
+vendor-neutral governed observation contract, and an evidence-backed,
+capability-specific source-qualification layer. No application code, database,
+selected data vendor, odds API integration, ingestion pipeline, or user-facing
+product has been built. It is **not** a live platform, a live odds product, or a
+production data system, and **no provider has been selected**.
 
 ## Initial product surfaces (planned)
 
@@ -82,6 +83,19 @@ selected or built.
 - Machine-readable contracts (JSON Schema draft 2020-12): [`contracts/observation-envelope.schema.json`](contracts/observation-envelope.schema.json) (state-aware: base tier represents any candidate; ADMITTED/QUARANTINED satisfy stronger conditional invariants), [`contracts/identity-mapping.schema.json`](contracts/identity-mapping.schema.json), [`contracts/source-profile.schema.json`](contracts/source-profile.schema.json)
 - Reusable deterministic validator [`governance/validate_observation.py`](governance/validate_observation.py) — the repository-local semantic gate (standard library only; no APIs, database, identity generation, or publication). Enforcement layers are documented in [docs/OBSERVATION_CONTRACT.md](docs/OBSERVATION_CONTRACT.md#enforcement-layers-schema-vs-validator).
 - Synthetic contract fixtures under [`fixtures/observation-contract/`](fixtures/observation-contract/), validated by [`tests/test_contract_fixtures.py`](tests/test_contract_fixtures.py) and [`tests/test_admission_validator.py`](tests/test_admission_validator.py) (fixture consistency, schema/validator vocabulary-drift checks, and negative/mutation tests)
+
+## Source qualification (Sprint 2)
+
+Evidence-backed, capability-specific qualification of real data providers, from
+public official primary sources only. **No vendor is selected, no score or
+ranking is produced, and no provider was contacted or subscribed to.**
+
+- [docs/SOURCE_QUALIFICATION_STANDARD.md](docs/SOURCE_QUALIFICATION_STANDARD.md) — **LBSQ-001**, technical/rights postures, capability definitions, deterministic derivation
+- [docs/SOURCE_EVIDENCE_POLICY.md](docs/SOURCE_EVIDENCE_POLICY.md) — what counts as acceptable primary-source evidence
+- [docs/SOURCE_QUALIFICATION_REGISTER.md](docs/SOURCE_QUALIFICATION_REGISTER.md) — the public, alphabetical qualification register
+- Machine contracts: [`contracts/source-evidence.schema.json`](contracts/source-evidence.schema.json), [`contracts/source-qualification.schema.json`](contracts/source-qualification.schema.json)
+- Public-safe real-provider evidence and qualification records under [`evidence/source-qualification/`](evidence/source-qualification/)
+- Deterministic validator [`governance/validate_source_qualification.py`](governance/validate_source_qualification.py) and tests [`tests/test_source_qualification.py`](tests/test_source_qualification.py)
 
 ## Legal and responsible-use posture
 

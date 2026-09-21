@@ -6,8 +6,8 @@ foundations.
 
 - **Status values:** `Ratified` (agreed and in force), `Deferred` (explicitly
   postponed to a later governance decision).
-- Sprint 0 decisions (DEC-001 – DEC-014) and Sprint 1 decisions
-  (DEC-015 – DEC-021) are all dated **2026-09-21**.
+- Sprint 0 (DEC-001 – DEC-014), Sprint 1 (DEC-015 – DEC-021), and Sprint 2
+  (DEC-022 – DEC-026) decisions are all dated **2026-09-21**.
 
 | ID | Date | Status | Decision |
 | --- | --- | --- | --- |
@@ -32,6 +32,11 @@ foundations.
 | DEC-019 | 2026-09-21 | Ratified | **Provenance-Preserving Conflict and Correction.** Duplicates require demonstrated same source assertion (not merely matching canonical identity + price); different providers are separate provenance paths. Same-provider incompatible assertions are retained, never silently last-write-wins. Corrections are append-only via `supersedes_observation_id`, and superseded records remain traceable. Provider precedence is not ratified. See [docs/CONFLICT_AND_DEDUPLICATION.md](docs/CONFLICT_AND_DEDUPLICATION.md). |
 | DEC-020 | 2026-09-21 | Ratified | **Temporal Evidence and Freshness.** Source-observed time and ingestion time remain distinct; `ingested_at` cannot silently substitute for source quote time, and an observation lacking adequate source-observed timing cannot support a source-time Movement claim. Freshness exists only under an explicitly named governed policy; `current`/`live`/`fresh`/`stale` are not intrinsic source facts; no universal numeric freshness threshold is ratified. See [docs/TEMPORAL_GOVERNANCE.md](docs/TEMPORAL_GOVERNANCE.md). |
 | DEC-021 | 2026-09-21 | Ratified | **Derived Values Reference Source Observations.** Derived analytical outputs (implied/normalized probability, movement, consensus, future closing comparison) must reference governed source `observation_id`(s) and must not overwrite source fields or masquerade as source assertions. This reinforces DEC-004; derived values never appear inside the source observation envelope. |
+| DEC-022 | 2026-09-21 | Ratified | **LBSQ-001 Source Qualification Standard.** LadybugBets qualifies data providers through evidence-backed, capability-specific technical and rights postures. No numerical vendor score, no ranking, and no global "winner" is produced; qualification is not procurement. See [docs/SOURCE_QUALIFICATION_STANDARD.md](docs/SOURCE_QUALIFICATION_STANDARD.md). |
+| DEC-023 | 2026-09-21 | Ratified | **Primary-Source Evidence Rule.** Material contractual/data-rights and technical claims require current primary provider evidence (official Terms, legal, API/product docs, coverage, pricing, FAQ/support). Secondary sources may discover candidates but cannot establish permission; permission is never inferred from silence. |
+| DEC-024 | 2026-09-21 | Ratified | **Rights Fail Closed.** Access does not imply retention, display, derivation, or redistribution. The seven rights dimensions are independent. UNKNOWN (or NOT_VERIFIED technical) cannot satisfy a capability that requires explicit permission; such capabilities are UNRESOLVED. |
+| DEC-025 | 2026-09-21 | Ratified | **Capability-Specific Qualification.** Provider qualification is determined independently per LadybugBets capability (current-price observation, public SpotBoard, derived probability display, source-time movement, historical retention, raw redistribution). Outcomes are deterministically derived from the technical and rights matrices, not hand-typed. |
+| DEC-026 | 2026-09-21 | Ratified | **Evidence-Dated Qualification.** Qualification is tied to dated evidence (`retrieved_at`, and the source's own effective date when shown) and must be revalidated against current terms/capabilities before production use. No universal expiry interval is ratified. |
 
 ## Deferred / open questions
 
@@ -42,7 +47,12 @@ foundations.
   (see [docs/METHODOLOGY.md](docs/METHODOLOGY.md)). **Remains Deferred** through
   Sprint 1; no scoring is introduced.
 - Data vendor, database, and infrastructure choices remain open by DEC-009 and
-  are out of scope for Sprint 0 and Sprint 1.
+  are out of scope for Sprint 0, Sprint 1, and Sprint 2. Sprint 2 produces
+  evidence-backed, capability-specific qualification only (DEC-022); it selects
+  no vendor and ratifies no procurement.
+- **Sprint 2 open provider questions** (per-provider `unresolved_questions` in
+  `evidence/source-qualification/*.qualification.json`) remain open and require
+  primary-source or licence review before any production use.
 - **Sprint 1 deferrals within LBIR-001 / conflict governance:** provider
   precedence between disagreeing providers, and any timing tolerance for event
   merge, are **not** ratified and await later evidence. The `observation_id`
