@@ -49,6 +49,14 @@ def _codes(findings):
     return {f.code for f in findings}
 
 
+def _by_claim(bundle, claim_key):
+    """Return the single evidence item carrying claim_key (fails if not exactly one)."""
+    matches = [it for it in bundle["evidence_items"] if it.get("claim_key") == claim_key]
+    if len(matches) != 1:
+        raise AssertionError("expected exactly one %r item, found %d" % (claim_key, len(matches)))
+    return matches[0]
+
+
 class DerivationTests(unittest.TestCase):
     """Capability outcomes derive deterministically from the matrices."""
 
@@ -282,6 +290,131 @@ class BetfairSingleOperatorTests(unittest.TestCase):
         qual = _load(os.path.join(EVID, "betfair-exchange.qualification.json"))
         self.assertEqual(qual["technical_matrix"]["multi_operator_coverage"], "UNSUPPORTED")
         self.assertEqual(qual["capabilities"]["PUBLIC_SPOTBOARD"]["outcome"], "NOT_QUALIFIED")
+
+
+class EvidenceChainClosureTests(unittest.TestCase):
+    """A qualification is never valid unless its bound evidence bundle is valid.
+
+    validate_qualification incorporates the bundle findings, so no separate call
+    ordering can smuggle a valid qualification past an invalid bundle.
+    """
+
+    def test_invalid_bundle_makes_qualification_invalid(self):
+        # Baseline: a synced synthetic pair is valid on both validators.
+        bundle, qual = _synth()
+        _sync_committed(qual)
+        self.assertEqual(vq.validate_evidence_bundle(bundle), [])
+        self.assertEqual(vq.validate_qualification(qual, bundle), [])
+        # Corrupt only the bundle (non-HTTPS url); the qualification is untouched.
+        bundle["evidence_items"][0]["source_url"] = "http://synthetic-odds.example/docs"
+        codes = _codes(vq.validate_qualification(qual, bundle))
+        self.assertIn("INVALID_EVIDENCE_BUNDLE", codes)
+        self.assertIn("EVIDENCE_URL_NOT_HTTPS", codes)
+        self.assertFalse(vq.is_valid_qualification(qual, bundle))
+
+    def test_is_valid_qualification_never_true_against_invalid_bundle(self):
+        bundle, qual = _synth()
+        _sync_committed(qual)
+        # Malformed technical posture in the bundle item -> bundle invalid.
+        bundle["evidence_items"][0]["technical_posture"] = "MAYBE"
+        self.assertFalse(vq.is_valid_evidence_bundle(bundle))
+        self.assertFalse(vq.is_valid_qualification(qual, bundle))
+        self.assertIn("INVALID_EVIDENCE_BUNDLE", _codes(vq.validate_qualification(qual, bundle)))
+
+    def test_duplicate_evidence_id_propagates_to_qualification(self):
+        bundle, qual = _synth()
+        _sync_committed(qual)
+        bundle["evidence_items"].append(copy.deepcopy(bundle["evidence_items"][0]))
+        codes = _codes(vq.validate_qualification(qual, bundle))
+        self.assertIn("INVALID_EVIDENCE_BUNDLE", codes)
+        self.assertIn("DUPLICATE_EVIDENCE_ID", codes)
+
+    def test_combined_pair_api_matches_and_requires_both_valid(self):
+        bundle, qual = _synth()
+        _sync_committed(qual)
+        # Argument order for the combined API is (bundle, qualification).
+        self.assertEqual(vq.validate_source_qualification_pair(bundle, qual), [])
+        self.assertTrue(vq.is_valid_source_qualification_pair(bundle, qual))
+        bundle["evidence_items"][0]["source_url"] = "https://not-official.example/docs"
+        self.assertFalse(vq.is_valid_source_qualification_pair(bundle, qual))
+        self.assertIn("EVIDENCE_DOMAIN_MISMATCH", _codes(vq.validate_source_qualification_pair(bundle, qual)))
+
+    def test_valid_bundle_no_spurious_invalid_bundle_finding(self):
+        bundle, qual = _synth()
+        _sync_committed(qual)
+        self.assertNotIn("INVALID_EVIDENCE_BUNDLE", _codes(vq.validate_qualification(qual, bundle)))
+
+
+class OutcomeIdentityTests(unittest.TestCase):
+    """outcome_identifier_or_label: a source-native id OR an explicit source
+    outcome label preserves the raw assertion. A raw label does NOT establish
+    canonical outcome identity (LBIR-001 / DEC-014, DEC-016)."""
+
+    def test_technical_key_renamed(self):
+        self.assertIn("outcome_identifier_or_label", vq.TECHNICAL_KEYS)
+        self.assertNotIn("outcome_identifier_or_stable_key", vq.TECHNICAL_KEYS)
+
+    def test_outcome_label_gates_current_price_observation(self):
+        # Dropping the outcome gate makes CPO underivable as QUALIFIED.
+        _, qual = _synth()
+        qual["technical_matrix"]["outcome_identifier_or_label"] = "NOT_VERIFIED"
+        self.assertEqual(vq.derive_capabilities(qual)["CURRENT_PRICE_OBSERVATION"], "UNRESOLVED")
+
+    def test_odds_api_outcome_label_verified_without_native_id_claim(self):
+        bundle = _load(os.path.join(EVID, "the-odds-api.evidence.json"))
+        qual = _load(os.path.join(EVID, "the-odds-api.qualification.json"))
+        self.assertEqual(qual["technical_matrix"]["outcome_identifier_or_label"], "VERIFIED")
+        item = _by_claim(bundle, "outcome_identifier_or_label")
+        self.assertEqual(item["technical_posture"], "VERIFIED")
+        # The claim rests on the source label, and does not assert a native id.
+        self.assertIn("label", item["claim_summary"].lower())
+        self.assertIn("no provider-native outcome id", item["claim_summary"].lower())
+
+    def test_sportmonks_outcome_label_and_fixture_event_id(self):
+        bundle = _load(os.path.join(EVID, "sportmonks.evidence.json"))
+        qual = _load(os.path.join(EVID, "sportmonks.qualification.json"))
+        self.assertEqual(qual["technical_matrix"]["outcome_identifier_or_label"], "VERIFIED")
+        outcome = _by_claim(bundle, "outcome_identifier_or_label")
+        self.assertIn("label", outcome["claim_summary"].lower())
+        event = _by_claim(bundle, "stable_event_identifier")
+        # Event identity references the provider fixture id (fixture id / fixture_id).
+        self.assertIn("fixture", event["claim_summary"].lower())
+
+
+class BetfairEvidenceCompletionTests(unittest.TestCase):
+    def setUp(self):
+        self.bundle = _load(os.path.join(EVID, "betfair-exchange.evidence.json"))
+        self.qual = _load(os.path.join(EVID, "betfair-exchange.qualification.json"))
+
+    def test_documented_rate_limits_verified(self):
+        self.assertEqual(self.qual["technical_matrix"]["documented_rate_limits"], "VERIFIED")
+        item = _by_claim(self.bundle, "documented_rate_limits")
+        self.assertEqual(item["technical_posture"], "VERIFIED")
+        self.assertTrue(item.get("excerpt"))
+
+    def test_historical_odds_access_verified(self):
+        self.assertEqual(self.qual["technical_matrix"]["historical_odds_access"], "VERIFIED")
+        item = _by_claim(self.bundle, "historical_odds_access")
+        self.assertEqual(item["technical_posture"], "VERIFIED")
+
+    def test_outcome_identity_not_over_upgraded(self):
+        # No selectionId evidence retrieved -> outcome identity stays NOT_VERIFIED.
+        self.assertEqual(self.qual["technical_matrix"]["outcome_identifier_or_label"], "NOT_VERIFIED")
+        self.assertEqual(self.qual["technical_matrix"]["epl_coverage"], "NOT_VERIFIED")
+        self.assertEqual(self.qual["technical_matrix"]["source_observed_timestamp"], "NOT_VERIFIED")
+
+    def test_rights_fail_closed(self):
+        for key in vq.RIGHTS_KEYS:
+            self.assertEqual(self.qual["rights_matrix"][key], "UNKNOWN", key)
+        # No rights-establishing capability may be QUALIFIED under all-UNKNOWN rights.
+        for cap in vq.CAPABILITY_KEYS:
+            self.assertNotEqual(self.qual["capabilities"][cap]["outcome"], "QUALIFIED", cap)
+
+    def test_current_price_observation_unresolved(self):
+        self.assertEqual(self.qual["capabilities"]["CURRENT_PRICE_OBSERVATION"]["outcome"], "UNRESOLVED")
+
+    def test_pair_is_valid(self):
+        self.assertEqual(vq.validate_source_qualification_pair(self.bundle, self.qual), [])
 
 
 if __name__ == "__main__":  # pragma: no cover

@@ -76,7 +76,7 @@
         "stable_event_identifier",
         "operator_identifier_or_stable_label",
         "market_identifier_or_stable_key",
-        "outcome_identifier_or_stable_key",
+        "outcome_identifier_or_label",
         "source_observed_timestamp",
         "historical_odds_access",
         "documented_rate_limits"
@@ -89,7 +89,7 @@
         "stable_event_identifier": { "$ref": "#/$defs/technical_posture" },
         "operator_identifier_or_stable_label": { "$ref": "#/$defs/technical_posture" },
         "market_identifier_or_stable_key": { "$ref": "#/$defs/technical_posture" },
-        "outcome_identifier_or_stable_key": { "$ref": "#/$defs/technical_posture" },
+        "outcome_identifier_or_label": { "$ref": "#/$defs/technical_posture" },
         "source_observed_timestamp": { "$ref": "#/$defs/technical_posture" },
         "historical_odds_access": { "$ref": "#/$defs/technical_posture" },
         "documented_rate_limits": { "$ref": "#/$defs/technical_posture" }

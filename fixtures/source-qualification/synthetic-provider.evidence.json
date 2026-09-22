@@ -120,7 +120,7 @@
       "notes": null
     },
     {
-      "evidence_id": "syn-outcome_identifier_or_stable_key",
+      "evidence_id": "syn-outcome_identifier_or_label",
       "provider_id": "PRV_SYNTH",
       "source_url": "https://synthetic-odds.example/docs",
       "source_title": "Synthetic Provider Docs",
@@ -128,8 +128,8 @@
       "retrieved_at": "2026-09-21",
       "source_effective_date": null,
       "publisher_domain": "synthetic-odds.example",
-      "claim_key": "outcome_identifier_or_stable_key",
-      "claim_summary": "Synthetic evidence that outcome_identifier_or_stable_key is available.",
+      "claim_key": "outcome_identifier_or_label",
+      "claim_summary": "Synthetic evidence that outcome_identifier_or_label is available.",
       "technical_posture": "VERIFIED",
       "rights_posture": null,
       "excerpt": null,

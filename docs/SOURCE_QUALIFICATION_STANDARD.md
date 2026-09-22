@@ -84,8 +84,19 @@ Each capability × provider receives exactly one outcome: **QUALIFIED**,
 ### A. CURRENT_PRICE_OBSERVATION
 Required VERIFIED: `football_coverage`, `epl_coverage`, `operator_level_prices`,
 `stable_event_identifier`, `operator_identifier_or_stable_label`,
-`market_identifier_or_stable_key`, `outcome_identifier_or_stable_key`.
+`market_identifier_or_stable_key`, `outcome_identifier_or_label`.
 Required ALLOWED: `ingest_use`. (Public display is evaluated separately.)
+
+**`outcome_identifier_or_label`.** This technical gate is VERIFIED when the source
+exposes either a source-native outcome identifier **or** an explicit source
+outcome label that preserves the raw assertion (e.g. an outcome `name`/`label`
+alongside its price). A raw outcome label is sufficient to *record the source
+assertion*, but it does **not** establish canonical outcome identity: raw
+identity resolves to canonical identity only through governed deterministic
+evidence (DEC-014, DEC-016 / LBIR-001), never by treating a label as canonical.
+The key was named `outcome_identifier_or_stable_key` in the first Sprint 2 draft;
+it is now `outcome_identifier_or_label` to state plainly that a preserved source
+label qualifies the gate. This is a naming alignment, not a new decision.
 
 ### B. PUBLIC_SPOTBOARD
 Requires **A = QUALIFIED**, `public_display = ALLOWED`, and
@@ -169,6 +180,19 @@ A qualification record is bound to exactly one evidence bundle: `provider_id`,
 item must carry the same `provider_id`. Evidence from another governed provider
 identity can never satisfy a qualification, even if `claim_key` and posture
 match.
+
+## Evidence-chain closure (composition integrity)
+
+Qualification validity is **compositional**: no qualification is valid unless its
+bound evidence bundle is itself valid. `validate_qualification(record, bundle)`
+incorporates every `validate_evidence_bundle(bundle)` finding and adds
+`INVALID_EVIDENCE_BUNDLE`, so a qualification can never pass while its evidence
+bundle is malformed (duplicate evidence ids, a non-HTTPS or off-domain source, a
+provider mismatch, a malformed posture, a secret-like field). `is_valid_qualification`
+therefore can **never** return `True` when `is_valid_evidence_bundle(bundle)` is
+`False`. `validate_source_qualification_pair(bundle, qualification)` is the
+canonical single entry point and returns empty only when **both** the bundle and
+the qualification are valid.
 
 ## Timestamp qualification
 

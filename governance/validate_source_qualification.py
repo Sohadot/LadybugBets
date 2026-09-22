@@ -16,6 +16,11 @@ Central rules:
   same provider_id. Cross-provider evidence cannot satisfy a qualification.
 - A QUALIFIED capability must be machine-traceable to an evidence item for every
   required VERIFIED technical and ALLOWED right gate.
+- **No qualification is valid unless its bound evidence bundle is itself valid.**
+  `validate_qualification` incorporates the bundle findings, and
+  `validate_source_qualification_pair(bundle, qualification)` is the canonical
+  single call; `is_valid_qualification` can never return True against an invalid
+  bundle.
 - No score, no ranking, no global winner.
 """
 
@@ -35,7 +40,7 @@ TECHNICAL_KEYS = (
     "stable_event_identifier",
     "operator_identifier_or_stable_label",
     "market_identifier_or_stable_key",
-    "outcome_identifier_or_stable_key",
+    "outcome_identifier_or_label",
     "source_observed_timestamp",
     "historical_odds_access",
     "documented_rate_limits",
@@ -74,7 +79,7 @@ CAPABILITY_REQUIREMENTS = {
             "stable_event_identifier",
             "operator_identifier_or_stable_label",
             "market_identifier_or_stable_key",
-            "outcome_identifier_or_stable_key",
+            "outcome_identifier_or_label",
         ),
         "rights": ("ingest_use",),
     },
@@ -95,7 +100,7 @@ CAPABILITY_REQUIREMENTS = {
             "source_observed_timestamp",
             "stable_event_identifier",
             "market_identifier_or_stable_key",
-            "outcome_identifier_or_stable_key",
+            "outcome_identifier_or_label",
         ),
         "rights": ("ingest_use", "retain_historical"),
     },
@@ -317,6 +322,14 @@ def validate_qualification(record, bundle):
     if not isinstance(bundle, dict):
         return [Finding("MALFORMED", "bundle is not an object")]
 
+    # Compositional integrity: a qualification is NEVER valid against an invalid
+    # evidence bundle. Incorporate the bundle findings so callers cannot bypass
+    # this by invoking the two validators separately.
+    bundle_findings = validate_evidence_bundle(bundle)
+    if bundle_findings:
+        findings.append(Finding("INVALID_EVIDENCE_BUNDLE", "bound evidence bundle is invalid"))
+        findings.extend(bundle_findings)
+
     index = _evidence_index(bundle)
 
     # --- Provider/bundle binding --------------------------------------------
@@ -391,9 +404,28 @@ def validate_qualification(record, bundle):
     return findings
 
 
+def validate_source_qualification_pair(bundle, qualification):
+    """Canonical combined API: validate a bundle + its bound qualification together.
+
+    Returns all findings. Because validate_qualification already incorporates
+    the evidence-bundle findings, this is the single call a caller needs; the
+    result is empty only when BOTH the bundle and the qualification are valid.
+    """
+    return validate_qualification(qualification, bundle)
+
+
+def is_valid_source_qualification_pair(bundle, qualification):
+    return not validate_source_qualification_pair(bundle, qualification)
+
+
 def is_valid_evidence_bundle(bundle):
     return not validate_evidence_bundle(bundle)
 
 
 def is_valid_qualification(record, bundle):
+    """True only when the record AND its bound evidence bundle are both valid.
+
+    validate_qualification incorporates the bundle findings, so this can never
+    return True against an invalid bundle.
+    """
     return not validate_qualification(record, bundle)

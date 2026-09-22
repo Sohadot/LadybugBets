@@ -15,7 +15,7 @@
     "stable_event_identifier": "VERIFIED",
     "operator_identifier_or_stable_label": "VERIFIED",
     "market_identifier_or_stable_key": "VERIFIED",
-    "outcome_identifier_or_stable_key": "VERIFIED",
+    "outcome_identifier_or_label": "VERIFIED",
     "source_observed_timestamp": "VERIFIED",
     "historical_odds_access": "VERIFIED",
     "documented_rate_limits": "VERIFIED"
@@ -42,7 +42,7 @@
         "syn-stable_event_identifier",
         "syn-operator_identifier_or_stable_label",
         "syn-market_identifier_or_stable_key",
-        "syn-outcome_identifier_or_stable_key",
+        "syn-outcome_identifier_or_label",
         "syn-ingest_use"
       ],
       "notes": null
@@ -56,7 +56,7 @@
         "syn-stable_event_identifier",
         "syn-operator_identifier_or_stable_label",
         "syn-market_identifier_or_stable_key",
-        "syn-outcome_identifier_or_stable_key",
+        "syn-outcome_identifier_or_label",
         "syn-multi_operator_coverage",
         "syn-ingest_use",
         "syn-public_display"
@@ -72,7 +72,7 @@
         "syn-stable_event_identifier",
         "syn-operator_identifier_or_stable_label",
         "syn-market_identifier_or_stable_key",
-        "syn-outcome_identifier_or_stable_key",
+        "syn-outcome_identifier_or_label",
         "syn-ingest_use",
         "syn-derive_calculations",
         "syn-public_display"
@@ -87,7 +87,7 @@
         "syn-source_observed_timestamp",
         "syn-stable_event_identifier",
         "syn-market_identifier_or_stable_key",
-        "syn-outcome_identifier_or_stable_key",
+        "syn-outcome_identifier_or_label",
         "syn-ingest_use",
         "syn-retain_historical"
       ],
@@ -120,7 +120,7 @@
     "syn-stable_event_identifier",
     "syn-operator_identifier_or_stable_label",
     "syn-market_identifier_or_stable_key",
-    "syn-outcome_identifier_or_stable_key",
+    "syn-outcome_identifier_or_label",
     "syn-source_observed_timestamp",
     "syn-historical_odds_access",
     "syn-documented_rate_limits",
