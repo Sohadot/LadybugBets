@@ -15,7 +15,7 @@
     "stable_event_identifier": "VERIFIED",
     "operator_identifier_or_stable_label": "VERIFIED",
     "market_identifier_or_stable_key": "VERIFIED",
-    "outcome_identifier_or_stable_key": "VERIFIED",
+    "outcome_identifier_or_label": "VERIFIED",
     "source_observed_timestamp": "VERIFIED",
     "historical_odds_access": "VERIFIED",
     "documented_rate_limits": "NOT_VERIFIED"
@@ -42,7 +42,7 @@
         "sm-event-id",
         "sm-operator-id",
         "sm-market-key",
-        "sm-outcome-key",
+        "sm-outcome-label",
         "sm-ingest-use"
       ],
       "notes": "Operator-level EPL prices with event/market/outcome identity and ingest rights."
@@ -67,7 +67,7 @@
         "sm-source-time",
         "sm-event-id",
         "sm-market-key",
-        "sm-outcome-key",
+        "sm-outcome-label",
         "sm-ingest-use",
         "sm-retain"
       ],
@@ -107,7 +107,7 @@
     "sm-operator-id",
     "sm-event-id",
     "sm-market-key",
-    "sm-outcome-key",
+    "sm-outcome-label",
     "sm-source-time",
     "sm-historical",
     "sm-ingest-use",

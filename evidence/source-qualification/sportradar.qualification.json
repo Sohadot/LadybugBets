@@ -15,7 +15,7 @@
     "stable_event_identifier": "VERIFIED",
     "operator_identifier_or_stable_label": "NOT_VERIFIED",
     "market_identifier_or_stable_key": "NOT_VERIFIED",
-    "outcome_identifier_or_stable_key": "NOT_VERIFIED",
+    "outcome_identifier_or_label": "NOT_VERIFIED",
     "source_observed_timestamp": "NOT_VERIFIED",
     "historical_odds_access": "NOT_VERIFIED",
     "documented_rate_limits": "NOT_VERIFIED"
@@ -38,7 +38,7 @@
       "evidence_ids": [
         "sr-access-model"
       ],
-      "notes": "EPL, per-odd operator identifier, market/outcome keys not confirmed publicly, and ingest rights contract-gated (UNKNOWN)."
+      "notes": "EPL, per-odd operator identifier, market/outcome fields not confirmed publicly, and ingest rights contract-gated (UNKNOWN)."
     },
     "PUBLIC_SPOTBOARD": {
       "outcome": "UNRESOLVED",
@@ -81,7 +81,7 @@
     "EPL coverage and per-odd operator/market/outcome identifiers and timestamp semantics were not confirmed from accessible public documentation."
   ],
   "unresolved_questions": [
-    "Which bookmaker identifier, market key, and outcome key fields does the Odds Comparison API expose, and is EPL within the licensed coverage tier?",
+    "Which bookmaker identifier, market key, and outcome key/label fields does the Odds Comparison API expose, and is EPL within the licensed coverage tier?",
     "What timestamp does the Odds Comparison API document as the source-observed/quote-state time?",
     "Which data-use rights does a commercial Sportradar agreement grant for operator-level odds? Requires reviewing the actual licence (out of scope)."
   ],

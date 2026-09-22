@@ -15,10 +15,10 @@
     "stable_event_identifier": "VERIFIED",
     "operator_identifier_or_stable_label": "VERIFIED",
     "market_identifier_or_stable_key": "VERIFIED",
-    "outcome_identifier_or_stable_key": "NOT_VERIFIED",
+    "outcome_identifier_or_label": "NOT_VERIFIED",
     "source_observed_timestamp": "NOT_VERIFIED",
-    "historical_odds_access": "NOT_VERIFIED",
-    "documented_rate_limits": "NOT_VERIFIED"
+    "historical_odds_access": "VERIFIED",
+    "documented_rate_limits": "VERIFIED"
   },
   "rights_matrix": {
     "ingest_use": "UNKNOWN",
@@ -30,17 +30,17 @@
     "redistribute_derived": "UNKNOWN"
   },
   "attribution_requirement": null,
-  "geographic_restrictions": null,
-  "pricing_access": "UNKNOWN",
+  "geographic_restrictions": "Historical Data service only: available to Betfair.com customers; Betfair.br/.it/.es/.ro/.se customers cannot access historicdata.betfair.com (a Historical Data access restriction, not a general Exchange API restriction).",
+  "pricing_access": "CONTACT_SALES",
   "capabilities": {
     "CURRENT_PRICE_OBSERVATION": {
       "outcome": "UNRESOLVED",
       "evidence_ids": [
         "bf-football",
         "bf-multi-operator",
-        "bf-access-model"
+        "bf-licence"
       ],
-      "notes": "Soccer, event/market identity and a single operator are evidenced, but EPL competition and outcome identifiers are not confirmed and ingest rights are UNKNOWN."
+      "notes": "Soccer, event/market identity and a single operator are evidenced, but EPL competition and outcome (selection) identifiers are not confirmed and ingest rights are UNKNOWN."
     },
     "PUBLIC_SPOTBOARD": {
       "outcome": "NOT_QUALIFIED",
@@ -52,9 +52,9 @@
     "DERIVED_PROBABILITY_DISPLAY": {
       "outcome": "UNRESOLVED",
       "evidence_ids": [
-        "bf-access-model"
+        "bf-licence"
       ],
-      "notes": "Base unresolved and derivation/display rights not established."
+      "notes": "Base unresolved and derivation/display rights not established (licence-governed)."
     },
     "SOURCE_TIME_MARKET_MOVEMENT": {
       "outcome": "UNRESOLVED",
@@ -66,27 +66,29 @@
     "HISTORICAL_DATASET_RETENTION": {
       "outcome": "UNRESOLVED",
       "evidence_ids": [
-        "bf-access-model"
+        "bf-historical",
+        "bf-licence"
       ],
-      "notes": "Retention rights not established from public evidence."
+      "notes": "Historical Exchange data is technically available from April 2015, but retention rights are UNKNOWN (availability does not grant retention)."
     },
     "RAW_DATA_REDISTRIBUTION": {
       "outcome": "UNRESOLVED",
       "evidence_ids": [
-        "bf-access-model"
+        "bf-licence"
       ],
-      "notes": "Redistribution rights not established from public evidence."
+      "notes": "Redistribution rights not established (licence-governed)."
     }
   },
   "blockers": [
     "Single-operator source: multi_operator_coverage = UNSUPPORTED. The Exchange supplies only Betfair's own exchange prices, so it cannot support governed multi-operator Consensus or an operator-diverse SpotBoard (DEC-013).",
-    "Data-use rights are not established by any retrieved primary source (all rights UNKNOWN, fail closed); commercial use reportedly requires a licensed vendor arrangement (a licence being required does not itself grant a right).",
-    "EPL competition, selection/runner (outcome) identifiers, timestamp semantics, historical availability, and request limits were not confirmable from accessible primary documentation."
+    "Data-use rights are not established by any retrieved primary source (all rights UNKNOWN, fail closed). Commercial use is governed by distinct licence categories (Software Vendor / Operator Data / Odds Publisher); a required licence does not itself grant a right.",
+    "EPL competition, selection/runner (outcome) identifiers, and source-observed timestamp semantics were not confirmable from accessible primary documentation.",
+    "Historical Exchange data is technically available (from April 2015) but retention/display/redistribution rights remain UNKNOWN; availability does not grant retention (DEC-024)."
   ],
   "unresolved_questions": [
-    "Does a Betfair licensed-vendor / commercial arrangement permit ingesting, caching, retaining, publicly displaying, and/or redistributing exchange data? Requires reviewing the vendor licence (out of scope).",
-    "What are the selection/runner (selectionId) identifiers and the exchange price/state timestamps (e.g. lastMatchTime, publishTime)?",
-    "Is EPL match-winner data available on the exchange with a usable event identity, and what are the documented request/data limits?"
+    "Does a Betfair licensed-vendor / commercial arrangement permit ingesting, caching, retaining, publicly displaying, and/or redistributing exchange or historical data? Requires reviewing the specific governing licence (out of scope).",
+    "What are the selection/runner (selectionId) outcome identifiers and the exchange price/state timestamps (e.g. lastMatchTime, publishTime)?",
+    "Is EPL match-winner data available on the exchange with a usable event identity?"
   ],
   "evidence_ids": [
     "bf-football",
@@ -95,6 +97,10 @@
     "bf-operator-identity",
     "bf-event-id",
     "bf-market-id",
+    "bf-rate-limits",
+    "bf-historical",
+    "bf-geographic",
+    "bf-licence",
     "bf-access-model"
   ]
 }

@@ -97,11 +97,11 @@
       "source_effective_date": null,
       "publisher_domain": "www.sportmonks.com",
       "claim_key": "stable_event_identifier",
-      "claim_summary": "Odds are tied to fixtures identified by a fixture with named participants and a date (e.g. Crystal Palace vs Arsenal, Premier League).",
+      "claim_summary": "Odds are tied to a fixture identified by a provider fixture id (fixture id / fixture_id fields), with named participants and a date.",
       "technical_posture": "VERIFIED",
       "rights_posture": null,
       "excerpt": null,
-      "notes": "Raw/source event identity with participant components."
+      "notes": "Raw/source event identity via the provider fixture id; participant components present."
     },
     {
       "evidence_id": "sm-market-key",
@@ -113,14 +113,14 @@
       "source_effective_date": null,
       "publisher_domain": "www.sportmonks.com",
       "claim_key": "market_identifier_or_stable_key",
-      "claim_summary": "Feed covers many markets including Match result (the 1X2 equivalent).",
+      "claim_summary": "Odds carry a market_id and the feed covers many markets including Match result (the 1X2 equivalent).",
       "technical_posture": "VERIFIED",
       "rights_posture": null,
       "excerpt": null,
       "notes": null
     },
     {
-      "evidence_id": "sm-outcome-key",
+      "evidence_id": "sm-outcome-label",
       "provider_id": "PRV_SPORTMONKS",
       "source_url": "https://www.sportmonks.com/football-api/premium-odds-feed/",
       "source_title": "Football Odds Feed - Premium API for Betting | Sportmonks",
@@ -128,12 +128,12 @@
       "retrieved_at": "2026-09-21",
       "source_effective_date": null,
       "publisher_domain": "www.sportmonks.com",
-      "claim_key": "outcome_identifier_or_stable_key",
-      "claim_summary": "Each market exposes labelled outcomes (e.g. home/draw/away for Match result).",
+      "claim_key": "outcome_identifier_or_label",
+      "claim_summary": "Each odds object carries a source outcome label (label field) and a value (e.g. home/draw/away for Match result).",
       "technical_posture": "VERIFIED",
       "rights_posture": null,
       "excerpt": null,
-      "notes": null
+      "notes": "label is the raw source outcome label, not a stable identifier and not a canonical outcome identity (resolvable only via LBIR-001)."
     },
     {
       "evidence_id": "sm-source-time",
@@ -145,7 +145,7 @@
       "source_effective_date": null,
       "publisher_domain": "www.sportmonks.com",
       "claim_key": "source_observed_timestamp",
-      "claim_summary": "Each odd carries latest_bookmaker_update, the timestamp of the bookmaker's latest update (per-odd freshness / when that bookmaker last changed its price).",
+      "claim_summary": "Each odd carries latest_bookmaker_update, the timestamp of the bookmaker's latest update (when that bookmaker last changed its price).",
       "technical_posture": "VERIFIED",
       "rights_posture": null,
       "excerpt": "latest_bookmaker_update - Timestamp of the bookmaker's latest update.",
@@ -245,7 +245,7 @@
       "technical_posture": null,
       "rights_posture": null,
       "excerpt": "Reselling Sportmonks' data without approval is not allowed ... you cannot directly sell the data we provide.",
-      "notes": "Recorded as a descriptive fact; redistribute_raw is UNKNOWN (fail closed) under the broad Sprint 1 definition."
+      "notes": "redistribute_raw is UNKNOWN (fail closed) under the broad Sprint 1 definition."
     }
   ]
 }

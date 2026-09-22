@@ -120,7 +120,7 @@
       "notes": null
     },
     {
-      "evidence_id": "oddsapi-outcome-key",
+      "evidence_id": "oddsapi-outcome-label",
       "provider_id": "PRV_THE_ODDS_API",
       "source_url": "https://the-odds-api.com/liveapi/guides/v4/",
       "source_title": "Documentation for sports odds API V4",
@@ -128,12 +128,12 @@
       "retrieved_at": "2026-09-21",
       "source_effective_date": null,
       "publisher_domain": "the-odds-api.com",
-      "claim_key": "outcome_identifier_or_stable_key",
-      "claim_summary": "Each market's outcomes carry a name and a price (and point for spreads/totals).",
+      "claim_key": "outcome_identifier_or_label",
+      "claim_summary": "Each market outcome carries a source label (name) and a price. No provider-native outcome id is documented; the raw outcome label preserves the source assertion.",
       "technical_posture": "VERIFIED",
       "rights_posture": null,
       "excerpt": null,
-      "notes": null
+      "notes": "A raw source outcome label (name), not a stable identifier and not a canonical outcome identity (resolvable only via LBIR-001)."
     },
     {
       "evidence_id": "oddsapi-source-time",
@@ -149,7 +149,7 @@
       "technical_posture": "VERIFIED",
       "rights_posture": null,
       "excerpt": "The market-level last_update field shows the last time our system saw odds for that market from the bookmaker.",
-      "notes": "Provider-observed source state satisfies the LBSQ-001 source-observed definition; it is not claimed to originate at the bookmaker (preserves DEC-020)."
+      "notes": "Provider-observed source state satisfies the LBSQ-001 source-observed definition; not claimed to originate at the bookmaker (preserves DEC-020)."
     },
     {
       "evidence_id": "oddsapi-historical",

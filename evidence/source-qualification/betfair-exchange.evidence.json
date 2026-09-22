@@ -21,7 +21,7 @@
       "technical_posture": "VERIFIED",
       "rights_posture": null,
       "excerpt": "Request all events for EventTypeId 1 (Soccer).",
-      "notes": "Soccer confirmed; the specific EPL competition was not confirmed on this page (epl_coverage = NOT_VERIFIED)."
+      "notes": "Soccer confirmed; the specific EPL competition was not confirmed (epl_coverage = NOT_VERIFIED)."
     },
     {
       "evidence_id": "bf-single-operator",
@@ -49,11 +49,11 @@
       "source_effective_date": null,
       "publisher_domain": "support.developer.betfair.com",
       "claim_key": "multi_operator_coverage",
-      "claim_summary": "The source exposes only Betfair's own exchange prices (a single exchange operator), not a multi-bookmaker comparison feed; there is exactly one quoted operator.",
+      "claim_summary": "The source exposes only Betfair's own exchange prices (a single exchange operator), not a multi-bookmaker comparison feed.",
       "technical_posture": "UNSUPPORTED",
       "rights_posture": null,
       "excerpt": null,
-      "notes": "Provider identity (Betfair) equals the single operator identity; governed multi-operator Consensus/SpotBoard requires several distinct operators (DEC-013)."
+      "notes": "Provider identity (Betfair) equals the single operator identity; multi-operator Consensus/SpotBoard requires several distinct operators (DEC-013)."
     },
     {
       "evidence_id": "bf-operator-identity",
@@ -81,7 +81,7 @@
       "source_effective_date": null,
       "publisher_domain": "support.developer.betfair.com",
       "claim_key": "stable_event_identifier",
-      "claim_summary": "The API references event identifiers (eventId) and market identifiers (marketId) for retrieving events and prices.",
+      "claim_summary": "The API references event identifiers (eventId) and market identifiers (marketId).",
       "technical_posture": "VERIFIED",
       "rights_posture": null,
       "excerpt": "Request all markets for a specific eventId ... Request prices for a specific marketId.",
@@ -104,6 +104,70 @@
       "notes": null
     },
     {
+      "evidence_id": "bf-rate-limits",
+      "provider_id": "PRV_BETFAIR_EXCHANGE",
+      "source_url": "https://support.developer.betfair.com/hc/en-us/articles/115003864671-What-data-request-limits-exist-on-the-Exchange-API",
+      "source_title": "What data/request limits exist on the Exchange API? - Betfair Developer Program",
+      "source_type": "SUPPORT",
+      "retrieved_at": "2026-09-21",
+      "source_effective_date": null,
+      "publisher_domain": "support.developer.betfair.com",
+      "claim_key": "documented_rate_limits",
+      "claim_summary": "Exchange API data requests are weighted: sum(Weight) x number of market ids must not exceed 200 points per request (a weighted per-request data constraint; exceeding it returns TOO_MUCH_DATA).",
+      "technical_posture": "VERIFIED",
+      "rights_posture": null,
+      "excerpt": "sum (Weight) * number of market ids must not exceed 200 points per requests",
+      "notes": "A weighted per-request data limit, not a requests-per-second rate."
+    },
+    {
+      "evidence_id": "bf-historical",
+      "provider_id": "PRV_BETFAIR_EXCHANGE",
+      "source_url": "https://support.developer.betfair.com/hc/en-us/articles/360002407732-What-data-is-provided-by-the-Historical-Data-service",
+      "source_title": "What data is provided by the Historical Data service? - Betfair Developer Program",
+      "source_type": "SUPPORT",
+      "retrieved_at": "2026-09-21",
+      "source_effective_date": null,
+      "publisher_domain": "support.developer.betfair.com",
+      "claim_key": "historical_odds_access",
+      "claim_summary": "The Betfair Historical Data service provides detailed historical Exchange market, price and settlement data from April 2015 (a separate paid Historical Data service).",
+      "technical_posture": "VERIFIED",
+      "rights_posture": null,
+      "excerpt": "detailed historical market data for the Betfair Exchange, including market, price and settlement information ... from April 2015.",
+      "notes": "Technical availability via a separate paid service; retention/use rights are a separate question and remain UNKNOWN (DEC-024)."
+    },
+    {
+      "evidence_id": "bf-geographic",
+      "provider_id": "PRV_BETFAIR_EXCHANGE",
+      "source_url": "https://support.developer.betfair.com/hc/en-us/articles/360008664937-Which-juristictions-is-Betfair-Exchange-Historical-Data-available-to",
+      "source_title": "Which jurisdictions is Betfair Exchange Historical Data available to? - Betfair Developer Program",
+      "source_type": "SUPPORT",
+      "retrieved_at": "2026-09-21",
+      "source_effective_date": null,
+      "publisher_domain": "support.developer.betfair.com",
+      "claim_key": "geographic_restrictions",
+      "claim_summary": "The Historical Data service is available to Betfair.com customers only; Betfair.br/.it/.es/.ro/.se customers cannot access historicdata.betfair.com.",
+      "technical_posture": null,
+      "rights_posture": null,
+      "excerpt": null,
+      "notes": "Scoped to the Historical Data service; not a general restriction on every Betfair API capability."
+    },
+    {
+      "evidence_id": "bf-licence",
+      "provider_id": "PRV_BETFAIR_EXCHANGE",
+      "source_url": "https://support.developer.betfair.com/hc/en-us/articles/360002464152-Which-API-Licence-Do-I-Require",
+      "source_title": "Which API Licence Do I Require? - Betfair Developer Program",
+      "source_type": "SUPPORT",
+      "retrieved_at": "2026-09-21",
+      "source_effective_date": null,
+      "publisher_domain": "support.developer.betfair.com",
+      "claim_key": "licence_categories",
+      "claim_summary": "Commercial use is governed by distinct API licence categories: personal use; Software Vendor Licence; Betting Operator/Company Data Licence; and Odds Publisher Licence (for affiliates). Commercial routes require applying to / contacting Betfair Developer Support.",
+      "technical_posture": null,
+      "rights_posture": null,
+      "excerpt": null,
+      "notes": "A required licence does not itself grant a data-use right; rights remain UNKNOWN until the specific governing licence establishes them."
+    },
+    {
       "evidence_id": "bf-access-model",
       "provider_id": "PRV_BETFAIR_EXCHANGE",
       "source_url": "https://support.developer.betfair.com/hc/en-us/articles/6540502258077-What-Betfair-Exchange-market-data-is-available-from-listMarketBook-Stream-API",
@@ -113,11 +177,11 @@
       "source_effective_date": null,
       "publisher_domain": "support.developer.betfair.com",
       "claim_key": "access_model",
-      "claim_summary": "The accessible support pages document market-data content and identifiers but not data-use rights, selection identifiers, timestamps, or request limits; deeper API reference pages were not retrievable this sprint.",
+      "claim_summary": "The accessible support pages document market-data content and identifiers but not selection identifiers or source-observed timestamp semantics; deeper API reference pages were not retrievable this sprint.",
       "technical_posture": null,
       "rights_posture": null,
       "excerpt": null,
-      "notes": "All rights recorded UNKNOWN and fail closed; a required licence is not itself a granted right."
+      "notes": "Rights recorded UNKNOWN and fail closed."
     }
   ]
 }

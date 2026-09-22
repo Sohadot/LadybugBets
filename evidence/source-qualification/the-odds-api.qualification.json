@@ -15,7 +15,7 @@
     "stable_event_identifier": "VERIFIED",
     "operator_identifier_or_stable_label": "VERIFIED",
     "market_identifier_or_stable_key": "VERIFIED",
-    "outcome_identifier_or_stable_key": "VERIFIED",
+    "outcome_identifier_or_label": "VERIFIED",
     "source_observed_timestamp": "VERIFIED",
     "historical_odds_access": "VERIFIED",
     "documented_rate_limits": "VERIFIED"
@@ -42,7 +42,7 @@
         "oddsapi-event-id",
         "oddsapi-operator-id",
         "oddsapi-market-key",
-        "oddsapi-outcome-key",
+        "oddsapi-outcome-label",
         "oddsapi-ingest-use"
       ],
       "notes": "Operator-level EPL prices with event/market/outcome identity and ingest rights (subject to the primary-product condition)."
@@ -56,7 +56,7 @@
         "oddsapi-event-id",
         "oddsapi-operator-id",
         "oddsapi-market-key",
-        "oddsapi-outcome-key",
+        "oddsapi-outcome-label",
         "oddsapi-multi-operator",
         "oddsapi-ingest-use",
         "oddsapi-public-display"
@@ -72,7 +72,7 @@
         "oddsapi-event-id",
         "oddsapi-operator-id",
         "oddsapi-market-key",
-        "oddsapi-outcome-key",
+        "oddsapi-outcome-label",
         "oddsapi-ingest-use",
         "oddsapi-derive",
         "oddsapi-public-display"
@@ -87,7 +87,7 @@
         "oddsapi-source-time",
         "oddsapi-event-id",
         "oddsapi-market-key",
-        "oddsapi-outcome-key",
+        "oddsapi-outcome-label",
         "oddsapi-ingest-use",
         "oddsapi-retain"
       ],
@@ -125,7 +125,7 @@
     "oddsapi-operator-id",
     "oddsapi-event-id",
     "oddsapi-market-key",
-    "oddsapi-outcome-key",
+    "oddsapi-outcome-label",
     "oddsapi-source-time",
     "oddsapi-historical",
     "oddsapi-rate-limits",
